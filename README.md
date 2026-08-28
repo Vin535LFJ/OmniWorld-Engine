@@ -1,5 +1,19 @@
 # OmniWorld Engine
 
+[中文说明 / Chinese README](README.zh-CN.md)
+
+## 🚧 Current Development Focus
+
+Phase: **Phase 1 — GPU Runtime Foundation**
+
+Current Goal: Build the first runnable **OmniWorld Runtime Probe** that reports CPU, GPU, CUDA, Vulkan, VRAM, driver, and runtime configuration.
+
+This Week: Create the C++20/CMake runtime skeleton, implement CUDA/Vulkan capability probes, add logging/metrics, and record the first benchmarkable probe output.
+
+Status: Planning has converged; implementation should start with one active project only.
+
+Next Milestone: `runtime_probe` builds and runs from a clean checkout with reproducible output.
+
 **OmniWorld Engine is a GPU-native real-time runtime that connects perception, media, rendering, simulation, and foundation-model-driven agents through a unified world representation.**
 
 中文：**OmniWorld Engine 是一个 GPU 原生实时 Runtime，通过统一的 World Representation，将视频/传感器、AI 感知、GPU 计算、实时渲染、仿真以及 LLM/VLM/VLA/Agent 连接成一个可闭环运行的系统。**
