@@ -18,6 +18,34 @@ Next Milestone: `runtime_probe` builds and runs from a clean checkout with repro
 
 中文：**OmniWorld Engine 是一个 GPU 原生实时 Runtime，通过统一的 World Representation，将视频/传感器、AI 感知、GPU 计算、实时渲染、仿真以及 LLM/VLM/VLA/Agent 连接成一个可闭环运行的系统。**
 
+
+## Documentation Navigation
+
+```text
+Current Work
+    ↓
+Development Plan
+    ↓
+Architecture
+    ↓
+Projects
+    ↓
+Knowledge
+    ↓
+Research
+    ↓
+Benchmarks
+```
+
+- Current Work: [`CURRENT.md`](CURRENT.md)
+- Development Plan: [`docs/02-roadmap/development-plan.md`](docs/02-roadmap/development-plan.md)
+- Engineering Lifecycle: [`docs/03-engineering-lifecycle/README.md`](docs/03-engineering-lifecycle/README.md)
+- Architecture: [`docs/01-architecture/system-architecture.md`](docs/01-architecture/system-architecture.md)
+- Projects: [`docs/02-roadmap/project-status.md`](docs/02-roadmap/project-status.md) and [`projects/`](projects/)
+- Knowledge: [`knowledge/`](knowledge/)
+- Research: [`docs/17-research/research-queue.md`](docs/17-research/research-queue.md)
+- Benchmarks: [`benchmarks/`](benchmarks/)
+
 ## Vision
 
 Build a long-term engineering platform for learning and demonstrating how real-world and synthetic-world data can move through GPU systems with minimal practical copies, explicit synchronization, measurable latency, and clean runtime boundaries.

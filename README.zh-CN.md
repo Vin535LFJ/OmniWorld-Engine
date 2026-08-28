@@ -54,6 +54,9 @@ VLA / WAM
 - Backlog：[`BACKLOG.md`](BACKLOG.md)
 - 执行指南：[`docs/PROJECT_EXECUTION_GUIDE.md`](docs/PROJECT_EXECUTION_GUIDE.md)
 
+- 工程生命周期：[`docs/03-engineering-lifecycle/README.md`](docs/03-engineering-lifecycle/README.md)
+
+
 ## 工作方式
 
 ```text

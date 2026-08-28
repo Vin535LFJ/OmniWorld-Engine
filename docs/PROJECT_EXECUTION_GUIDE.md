@@ -59,6 +59,12 @@ A Year-1 Runtime MVP exists: media input, GPU processing, Vulkan rendering, Tens
 
 OmniWorld Engine becomes a reusable GPU-native runtime with Runtime, GPU, Video, Renderer, AI, World, Brain, ROS2, and Simulation layers. VLA/Physical AI remains an application/adaptation layer built on proven engine contracts rather than a distraction from core runtime development.
 
+
+## Lifecycle Rule
+
+Use `docs/03-engineering-lifecycle/lifecycle.md` for L/XL work, `docs/03-engineering-lifecycle/project-sizing.md` to scale process depth, and `docs/03-engineering-lifecycle/exploration-rules.md` before any ROS 2 / World Model / Agent / VLA exploration.
+
+
 ## Developer Briefing
 
 Current Phase: Phase 1 — GPU Runtime Foundation
