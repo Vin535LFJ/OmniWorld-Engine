@@ -1,5 +1,6 @@
 # Project Status
 
+
 Only one project may be `ACTIVE` as the main implementation route. Exploration is allowed only under the rules in `docs/03-engineering-lifecycle/exploration-rules.md`.
 
 | Project / Topic | Status | Track | Why | Promotion condition |
@@ -17,3 +18,4 @@ Only one project may be `ACTIVE` as the main implementation route. Exploration i
 | VLA / WAM / Physical AI | EXPLORATION | Intelligence | Allowed as bounded reading or Tiny Prototype; no core implementation. | Phase 7 adapter evidence justifies Phase 8 work. |
 | simulation-adapter | LATER | Intelligence | CARLA/Isaac choices require evidence and stable WorldState contracts. | Research queue produces adapter boundary evidence. |
 | digital-human | BACKLOG | Intelligence | Interesting application but not core runtime work. | Engine has mature video/render/AI/world loop. |
+

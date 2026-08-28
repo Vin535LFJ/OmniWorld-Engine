@@ -1,10 +1,13 @@
 # Current Focus
 
+
 Current Phase: Phase 1 — GPU Runtime Foundation
+
 
 Current Project: GPU Runtime Foundation
 
 Current Goal: Build the first runnable OmniWorld Runtime Probe that reports CPU, GPU, CUDA, Vulkan, VRAM, driver, and runtime configuration.
+
 
 ## Learn Now
 
@@ -65,3 +68,4 @@ Implementation may proceed when the Runtime Probe problem, inputs, outputs, depe
 ## Definition of Done
 
 Runtime Probe builds and runs locally, prints CPU/GPU/CUDA/Vulkan/VRAM/driver/configuration data, records basic timing metrics, and links code, test/check output, benchmark notes, documentation, and weekly review.
+

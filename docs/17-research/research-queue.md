@@ -2,6 +2,7 @@
 
 Research does not change the roadmap by itself. A topic must produce code, experiment, or benchmark evidence before it can become architecture.
 
+
 | Topic | Priority | Track | Status | Why | When |
 | --- | --- | --- | --- | --- | --- |
 | CUDA Graph | High | Engineering | Exploration | May reduce runtime scheduling overhead after basic streams/events are measured. | Phase 1/2 |

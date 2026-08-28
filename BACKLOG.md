@@ -10,6 +10,7 @@ If an idea enters Backlog, do not implement it in the current phase unless it is
 
 ROS 2, World Model, Agent, and VLA may move from Backlog to bounded Exploration only under `docs/03-engineering-lifecycle/exploration-rules.md`. Exploration still cannot modify Core or replace the ACTIVE project.
 
+
 ## Backlog Topics
 
 - ROS 2 full integration and NITROS optimization.
