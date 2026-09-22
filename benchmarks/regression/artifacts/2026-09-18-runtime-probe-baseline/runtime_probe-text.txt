@@ -1,0 +1,98 @@
+[runtime_probe]
+  [meta]
+    timestamp: 2026-09-18T06:26:15.420Z
+    version: 0.1.0
+    build_type: Release
+    cmake_version: 3.20.0-rc1
+    compiler: MSVC 1929
+  [cpu]
+    status: ok
+    os: Windows 11 (build 26200)
+    hostname: DRA
+    arch: x86_64
+    cpu_vendor: GenuineIntel
+    cpu_brand: Intel(R) Core(TM) i9-14900HX
+    logical_processors: 32
+    physical_cores: 24
+    hardware_concurrency: 32
+    total_physical_memory: 31.80 GiB
+    available_physical_memory: 7.35 GiB
+    total_virtual_memory: 63.59 GiB
+    page_size: 4096 bytes
+    allocation_granularity: 65536 bytes
+  [cuda]
+    status: ok
+    device_count: 1
+    driver_version: 12.6
+    runtime_version: 12.6
+    [device_0]
+      index: 0
+      status: ok
+      name: NVIDIA GeForce RTX 4060 Laptop GPU
+      compute_capability: 8.9
+      sm_count: 24
+      core_clock_mhz: 1890
+      memory_clock_mhz: 8001
+      memory_bus_width_bits: 128
+      l2_cache: 32.0 MiB
+      total_global_memory: 8.00 GiB
+      ecc: disabled
+      unified_addressing: true
+      async_engine_count: 1
+      pci: 0:1:0
+      free_global_memory: 6.93 GiB
+      used_global_memory: 1.06 GiB
+      bandwidth_bytes: 67108864
+      bandwidth_samples: 5
+      h2d_p50_ms: 5.283
+      h2d_p50_gbps: 12.70
+      h2d_best_gbps: 12.85
+      d2h_p50_ms: 5.178
+      d2h_p50_gbps: 12.96
+      d2h_best_gbps: 13.09
+  [vulkan]
+    loader: C:\WINDOWS\SYSTEM32\vulkan-1.dll
+    status: ok
+    instance_layer_count: 1
+    validation_layers: absent
+    instance_extension_count: 19
+    instance_extensions: VK_KHR_device_group_creation VK_KHR_display VK_KHR_external_fence_capabilities VK_KHR_external_memory_capabilities VK_KHR_external_semaphore_capabilities VK_KHR_get_display_properties2 VK_KHR_get_physical_device_properties2 VK_KHR_get_surface_capabilities2 VK_KHR_surface VK_KHR_surface_protected_capabilities VK_KHR_win32_surface VK_EXT_debug_report VK_EXT_debug_utils VK_EXT_direct_mode_display VK_EXT_surface_maintenance1 VK_EXT_swapchain_colorspace VK_NV_external_memory_capabilities VK_KHR_portability_enumeration VK_LUNARG_direct_driver_loading
+    physical_device_count: 1
+    [instance_layer]
+      name: VK_LAYER_NV_optimus
+      description: NVIDIA Optimus layer
+      spec_version: 1.3.280
+    [physical_device_0]
+      index: 0
+      name: NVIDIA GeForce RTX 4060 Laptop GPU
+      type: discrete_gpu
+      vendor_id: 0x10de
+      device_id: 0x28e0
+      api_version: 1.3.280
+      driver_version: 560.94.0 (raw 0x8c178000)
+      queue_family_count: 6
+      queue_family_0: graphics|compute|transfer|sparse x16
+      queue_family_1: transfer|sparse x2
+      queue_family_2: compute|transfer|sparse x8
+      queue_family_3: transfer|sparse x1
+      queue_family_4: transfer|sparse x1
+      queue_family_5: transfer|sparse x1
+      memory_type_count: 5
+      memory_type_0: property_flags 0x00 heap 1
+      memory_type_1: property_flags 0x01 heap 0
+      memory_type_2: property_flags 0x06 heap 1
+      memory_type_3: property_flags 0x0e heap 1
+      memory_type_4: property_flags 0x07 heap 0
+      memory_heap_count: 2
+      heap_0: 7.77 GiB device_local
+      heap_1: 15.90 GiB host
+      device_local_memory: 7.77 GiB
+  [timing]
+    cpu_probe_ms: 0.131
+    cuda_probe_ms: 191.460
+    vulkan_probe_ms: 222.729
+    total_ms: 414.324
+  [result]
+    cpu: ok
+    cuda: ok
+    vulkan: ok
