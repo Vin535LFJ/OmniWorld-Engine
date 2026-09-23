@@ -1,60 +1,43 @@
-# Current Sprint
+# Current Sprint — Grounding Loop v0 (first 30 days)
 
-## Current Phase
+Phase 0 of [`master-roadmap.md`](master-roadmap.md). One milestone per week; weekly review follows `weekly-review.md`. Direction and falsification criteria: [`../01-architecture/decisions/ADR-0007-project-direction.md`](../01-architecture/decisions/ADR-0007-project-direction.md).
 
-Phase 1 — GPU Runtime Foundation
+## Week 1 — Direction lands in the repo + preservation (done 2026-09-21)
 
-## Current Goal
+- [x] Preservation commit (`bb05d26`): previously-untracked `src/` probe code, `CMakeLists.txt`, `.gitignore`, benchmark baseline, and both root research reports committed; `.zcode/` session files excluded from VCS.
+- [x] Direction documents: vision.md rewrite, ADR-0007, world-state.md → World Contract v0, master-roadmap reset, this sprint reset; project-status / not-now / BACKLOG / CURRENT / research-queue updated; README (EN/ZH) repositioned.
+- [x] Legacy planning archived (not deleted) under `docs/99-archive/2026-09-planning-era/`: stub `projects/`, duplicate roadmap documents, legacy docs-root files, old ADR set, old architecture stubs.
 
-Build one runnable OmniWorld Runtime Probe before expanding into video, AI, ROS 2, simulation, or VLA work.
+Verify: every new document passes the Contract Gate checklist (Input/Output/Ownership/Lifetime/Synchronization/Timestamp/Error model/Performance expectations where applicable); internal links resolve; `git ls-files` contains all source code.
 
-## This Week
+## Week 2 — World State + truth world + observation
 
-Done 2026-09-18 (all on Windows 11; see `benchmarks/regression/2026-09-18-runtime-probe-baseline.md`):
+1. Implement WorldState v0 per `../01-architecture/world-state.md`: entity registry (runtime-minted ids), ticks, state versioning, world-transition logging.
+2. Deterministic synthetic truth world: N rigid bodies, seeded, kinematic integration. Determinism test: same seed → bit-identical state/observation sequences.
+3. Offscreen observation generator (low-resolution software raster is sufficient; visual fidelity is not the claim).
+4. Memory-contract compliance for the frame buffer (fields from `../01-architecture/memory.md`): backend/device/format/dimensions/lifetime/sync state/timestamp declared.
 
-1. [x] Create a minimal C++20/CMake/Ninja repository skeleton.
-2. [x] Add a `runtime_probe` executable target.
-3. [x] Implement CPU and OS/runtime configuration reporting.
-4. [x] Implement CUDA device capability probing: device name, compute capability, driver/runtime version, memory, stream/event smoke timing (64 MiB H2D/D2H p50: ~12.7 / ~13.1 GiB/s).
-5. [x] Implement Vulkan physical-device probing: API version, driver version, device type, queue families, memory heaps, validation-layer availability (loader loaded dynamically; no SDK required).
-6. [x] Save one sample run output and note missing environment dependencies (artifacts under `benchmarks/regression/artifacts/2026-09-18-runtime-probe-baseline/`).
+Verify: determinism test passes in CI (`ctest`); observation production ≥ 60 Hz headroom measured and recorded.
 
-## Next Week
+## Week 3 — Perception adapters ×2 + loop closure
 
-1. Add structured logging and consistent error/result types.
-2. Add metrics helpers for wall-clock, CUDA event timing, and Vulkan timestamp-query readiness.
-3. Add JSON or machine-readable probe output. (done early 2026-09-18: `--json` mode exists; keep hardening it)
-4. Add a tiny benchmark harness for repeated probe and timing runs (p50/p95/p99 over N invocations).
-5. Decide whether the environment is ready for Phase 2 video experiments. Blocker: current machine is Windows 11, not the Linux target from ADR-0003/ADR-0008; Linux CPU-probe branch is written but untested.
+1. Perception Adapter Contract frozen (same Gate fields as Week 1 checklist) covering: input observation metadata, output proposals (`target`, fields, `confidence`, `tick_observed`).
+2. Two DIFFERENT local ONNX perception models (e.g., two lightweight detector/segmenter classes) wired through the contract.
+3. Ownership adjudication: truth owns kinematics; perception writes belief-layer proposals; runtime records applied/rejected with reasons.
+4. First coherence metrics: identity stability (association accuracy), transform error (belief vs truth), confidence-calibration behavior.
 
-## Environment Deviation (recorded)
+Verify: loop closes (State → Observation → Perception → Proposals → Adjudication → Metrics Recording). Coherence metrics distinguish the normal model from a deliberately miscalibrated variant (Gate 1c evidence).
 
-- Target OS is Linux; development currently happens on Windows 11 (build 26200) with CUDA 12.6 and the system Vulkan loader. No Vulkan SDK or TensorRT installed.
+## Week 4 — Benchmark v0 + Gate 1
 
-## Current Learning
+1. Full benchmark run: per-stage p50/p95 latency decomposition, end-to-end loop rate, adapter-invariance test (swap the second perception model with zero core edits — Gate 1b evidence).
+2. Regression report written to `benchmarks/regression/` with the full environment metadata discipline of the 2026-09-18 baseline.
+3. Gate 1 verdict recorded in this file and in the regression report: PASS (proceed to Phase 1) / SHRINK MVP (reduce resolution, drop render stage) / REVISE CONTRACT.
 
-- C++20: targets, RAII, error/result types, and simple CLI structure.
-- CMake/Ninja: reproducible configure/build/test workflow.
-- CUDA: device model, memory properties, streams, events, synchronization, and timing.
-- Vulkan: instance creation, physical-device enumeration, queues, memory heaps, validation layers.
-- Linux: GPU driver discovery and reproducible environment notes.
+## Environment deviation (recorded)
 
-## Current Coding
+Development machine: Windows 11 (build 26200), i9-14900HX, RTX 4060 Laptop 8 GB, CUDA 12.6, system Vulkan loader, no Vulkan SDK, no TensorRT yet. Windows-first development is the standing practice per ADR-0007 (superseding strict Linux-first); dual-platform CI is a goal, not a blocker. TensorRT installation is deferred to the first phase whose benchmark actually needs it (perception runs through ONNX Runtime in Phase 0).
 
-- `runtime_probe` executable.
-- CUDA capability probe module.
-- Vulkan capability probe module.
-- Logging and metrics module.
-- First benchmark/check script or documented command.
+## Definition of Done (Phase 0)
 
-## Current Benchmark
-
-- Probe startup latency.
-- CUDA event timing overhead.
-- Vulkan instance/device enumeration latency.
-- Reported VRAM and driver/runtime versions.
-- Build and run reproducibility on the current Linux machine.
-
-## Definition of Done
-
-Phase 1 is done when `runtime_probe` builds from a clean checkout and outputs CPU, GPU, CUDA, Vulkan, VRAM, driver, runtime configuration, and basic timing metrics with one documented repeatable command.
+Grounding Loop v0 runs end-to-end against the three Gate-1 falsification criteria, with the measurements recorded in a regression report using full benchmark metadata discipline.

@@ -1,28 +1,83 @@
-# Master Roadmap
+# Master Roadmap (canonical)
 
-## Phase 0 — Knowledge / Foundation
-Goal: create the repo skeleton, learning system, toolchain policy, and benchmark discipline. Exit: README, docs, knowledge, templates, benchmarks, and project folders exist and are linked.
+Single mainline. No parallel phases. Working assumption: solo, ~20 h/week, Windows 11 + RTX 4060 Laptop 8 GB (Windows-first development per ADR-0007).
 
-## Phase 1 — GPU Runtime Skeleton
-Goal: prove C++20, CMake, CUDA, Vulkan, logging, metrics, and resource-handle basics. Exit: local build and smoke probes record versions and timing.
+Thesis / North Star: [`../00-overview/vision.md`](../00-overview/vision.md).
+Decision record: [`../01-architecture/decisions/ADR-0007-project-direction.md`](../01-architecture/decisions/ADR-0007-project-direction.md).
+Evidence: [`../17-research/2026-09-21-direction-decision.md`](../17-research/2026-09-21-direction-decision.md).
+This file supersedes all legacy plan documents (archived in `docs/99-archive/2026-09-planning-era/`).
 
-## Phase 2 — GPU Video Pipeline
-Goal: validate video demux/decode to GPU-accessible frames, CUDA processing, Vulkan display, and optional NVENC. Exit: benchmarked 1080p60 target path and measured 4K experiment, with copy/sync taxonomy.
+## Operating rules — when to research, decide, prototype, build, measure
 
-## Phase 3 — Vulkan Observation Renderer
-Goal: build the minimal renderer needed for image/world observation. Exit: renderer displays processed frames and simple WorldState overlays with validation clean.
+| Stage | Input | Output | Exit criteria |
+| --- | --- | --- | --- |
+| **Research** | An open question that blocks a phase exit, or a queued Exploration item | Research note with primary sources | The question has a sourced answer, or is proven irrelevant to the current phase |
+| **Architecture** | A contract is being frozen (World Contract, Adapter Contract, loop structure) | ADR in `../01-architecture/decisions/` | The ADR names options, trade-offs, and the benchmark that would reverse it |
+| **Spike / Prototype** | A named falsifiable technical question | Throwaway code + benchmark note | The question is answered with measured numbers |
+| **Implementation** | Frozen contracts | Runtime code + tests | Contract Gate passes (Input/Output/Ownership/Lifetime/Synchronization/Timestamp/Error model/Performance expectations defined); tests pass |
+| **Benchmark** | A runnable capability | Regression report (metadata discipline per `docs/16-benchmarks/benchmark-system.md`) | Numbers recorded with full environment metadata; claims traceable to the report |
+| **Review** | End of sprint/week | Updated sprint doc + gate verdict | Exit criteria judged against measurements, not feelings |
 
-## Phase 4 — AI Runtime
-Goal: integrate TensorRT/CUDA-stream inference with measured preprocess and inference latency. Exit: model inference updates render overlay and metrics.
+New ideas never enter the current sprint directly. Path: Research Queue → Backlog → master-roadmap phase → current-sprint → code/experiment/benchmark. After 2026-09-21 the planning phase is closed: sprint documents are for execution, not expansion.
 
-## Phase 5 — World State
-Goal: make perception → WorldState → renderer a real runtime loop. Exit: structured state, observation, action, and transition logs.
+## Phase 0 — Grounding Loop v0 (Weeks 1–4, first 30 days)
 
-## Phase 6 — Brain / Agent Loop
-Goal: connect a mock/local/remote Brain provider to produce actions. Exit: Observation → Brain → Action → WorldTransition demo.
+|  |  |
+| --- | --- |
+| Goal | Prove the Minimum Viable Thesis on real hardware: one canonical state, two heterogeneous writers, measurable coherence |
+| Capability | WorldState v0 (World Contract v0), deterministic truth world, offscreen observation, two perception adapters, ownership adjudication, coherence metrics |
+| Experiment | "One world, two writers": ground truth + two different local ONNX perception models in one closed loop |
+| Code | `src/world_state` + `src/truth_world` + `src/perception_onnx` + loop + metrics recorder |
+| Benchmark | End-to-end loop rate; per-stage p50/p95 latency decomposition; identity stability; transform error (belief vs truth); calibration-discrimination test |
+| Exit (Gate 1) | See Decision Gates below. Detail: [`current-sprint.md`](current-sprint.md) |
 
-## Phase 7 — ROS 2 / Simulation / VLA Adapters
-Goal: integrate external ecosystems without polluting Engine Core. Exit: adapter demos with measured boundaries and documented limitations.
+## Phase 1 — World-Model Adapter & World Contract v0.1 (Months 2–3)
 
-## Phase 8 — AI World Engine Applications
-Goal: compose runtime pieces into robotics, digital human, AD, XR, or physical-AI demos. Exit: public demo plus benchmark report.
+|  |  |
+| --- | --- |
+| Goal | Bring the "world model" participant class into the loop — the first contact with what the evaluation community measures |
+| Capability | Replay adapter (recorded rollouts as model evidence), tiny self-trained dynamics model (not a foundation model), prediction-vs-truth divergence metric, World Contract v0.1 freeze |
+| Code | Replay adapter + dynamics-model adapter + divergence instrumentation |
+| Benchmark | Prediction(t+1) divergence vs truth transition; loop rate under replay load |
+| Exit | A NEW model joins the loop by writing one adapter file with zero core changes; first publishable benchmark note (benchmarks/regression); WorldFoundry/cosmos-evaluator differential ADR recorded (research-queue item) |
+
+## Phase 2 — Public v0.1 & Evaluation-Community Contact (Months 4–6)
+
+|  |  |
+| --- | --- |
+| Goal | Become usable outside this repository |
+| Capability | 3+ third-party evaluation subjects (open interactive models at MineWorld/Matrix-Game class if runnable, recorded rollouts otherwise), WorldMark/WBench action-vocabulary mapping for the Action contract, public-facing benchmark report, packaging |
+| Code | Action-contract conventions + report pipeline polish + docs |
+| Benchmark | Public benchmark report v0.1 with reproducible methodology |
+| Exit (Gate 2) | ≥ 1 genuine external interest signal (issue/citation/evaluation-team contact). Fail → shrink to a personal research instrument; stop ALL platform investment |
+
+## Phase 3 — Contract Hardening & Second Truth World (Months 7–9)
+
+|  |  |
+| --- | --- |
+| Goal | Harden the contract against the failure classes it actually encountered |
+| Capability | Conflict-policy family (timestamp-wins, confidence-weighted) as experiment, per-field uncertainty extension, external physics adapter (Jolt/Rapier class), second truth world |
+| Benchmark | Reproducibility of coherence metrics across two different worlds |
+| Exit | Metrics reproduce across worlds; ROS 2 bridging demand re-evaluated with real evidence |
+
+## Phase 4 — Distribution & Ecosystem Test (Months 10–12)
+
+|  |  |
+| --- | --- |
+| Goal | Test the ecosystem hypothesis |
+| Capability | Clean distribution path, 3+ documented adapter examples, one submittable system/benchmark note |
+| Exit (Gate 3) | ≥ 2 real external uses (an evaluation, an experiment, a course assignment). Fail → freeze expansion; maintain as a personal instrument |
+
+## Decision Gates
+
+| Gate | When | Question | Pass criteria | Fail action |
+| --- | --- | --- | --- | --- |
+| **Gate 1** | Day 30 | Is the loop technically real? | (a) end-to-end ≥ 30 Hz on RTX 4060 8 GB; (b) second perception model integrates adapter-only (zero core edits); (c) metrics discriminate a deliberately miscalibrated model | Shrink MVP (lower resolution / drop render stage) or revise World Contract before ANY new feature |
+| **Gate 2** | Month 6 | Does anyone want this? | ≥ 1 genuine external signal | Downgrade to personal research instrument; stop platform investment |
+| **Gate 3** | Month 12 | Is an ecosystem seeding? | ≥ 2 real external uses | Freeze scope; maintain as tool; no further expansion |
+
+Gates are judged on recorded evidence only. A gate cannot be "passed in principle."
+
+## Now explicitly NOT built (2026-09-21, validated list)
+
+Vulkan full renderer; foundation-model training; distributed/multi-node runtime; ROS 2 bridge; VLA/LLM/Brain integration; editor; commercial service; OpenUSD full compliance (one-way export stays Exploration); industrial digital-twin use cases (NVIDIA Mega's territory); games/application demos; Ray tracing; mobile/Jetson; FFmpeg/NVDEC media path (returns only when a phase's benchmark needs it).

@@ -2,147 +2,59 @@
 
 [中文说明 / Chinese README](README.zh-CN.md)
 
+**OmniWorld Engine is the open runtime that keeps heterogeneous AI systems — perception models, world models, simulators, renderers, and agents — grounded in one evolving, measurable world state.**
+
+Interactive world models are being asked to become "world simulators" and "environments for training agents", yet no open system lets them share one live world state with a ground-truth simulator and an agent under explicit contracts (identity, time, ownership, confidence). That capability is either locked inside NVIDIA's proprietary stack (Mega Omniverse Blueprint / `ovstage`) or hand-rewritten inside every interactive world-model evaluation project. OmniWorld is the open, neutral runtime for that loop — grounding measured, not assumed.
+
+中文：**OmniWorld Engine 是一个开放的实时 runtime，让感知模型、世界模型、仿真器、渲染器与智能体在同一个可测量的、持续演化的世界状态上保持一致（identity / time / ownership / confidence 契约）。它首个立足点是交互式世界模型的闭环评测 harness。**
+
 ## 🚧 Current Development Focus
 
-Phase: **Phase 1 — GPU Runtime Foundation**
+Phase: **Phase 0 — Grounding Loop v0** (first 30 days; direction decision 2026-09-21, see [`ADR-0007`](docs/01-architecture/decisions/ADR-0007-project-direction.md))
 
-Current Goal: Build the first runnable **OmniWorld Runtime Probe** that reports CPU, GPU, CUDA, Vulkan, VRAM, driver, and runtime configuration.
+Current Goal: prove the Minimum Viable Thesis on an RTX 4060 8 GB — a deterministic synthetic world, two local perception adapters, ownership adjudication, and coherence metrics, in a closed loop at interactive rate, with three explicit falsification criteria (Gate 1 in [`current-sprint.md`](docs/02-roadmap/current-sprint.md)).
 
-This Week: Create the C++20/CMake runtime skeleton, implement CUDA/Vulkan capability probes, add logging/metrics, and record the first benchmarkable probe output.
+Status: planning is **closed and frozen** (2026-09-21). `runtime_probe` (C++20 CPU/CUDA/Vulkan hardware probe) builds and is committed; the first regression baseline exists at `benchmarks/regression/2026-09-18-runtime-probe-baseline.md`.
 
-Status: Planning has converged; implementation should start with one active project only.
+## Why now
 
-Next Milestone: `runtime_probe` builds and runs from a clean checkout with reproducible output.
+- 2025–2026 interactive world-model evaluation fragmented (WBench, WorldMark, WorldArena, KineBench, ...): every team re-implements action adapters, state schemas, and simulator couplings. WorldMark: *"no shared protocol has been established."*
+- The industrial version of the "world runtime" is proprietary and NVIDIA-ecosystem-only; AOUSD's ratified spec covers scene description, not runtime semantics.
+- No open player ships a runtime layer: Genie 3 has no API; World Labs ships world generation + persistent assets, not a live stateful runtime.
 
-**OmniWorld Engine is a GPU-native real-time runtime that connects perception, media, rendering, simulation, and foundation-model-driven agents through a unified world representation.**
+Full evidence: [`docs/17-research/2026-09-21-direction-decision.md`](docs/17-research/2026-09-21-direction-decision.md).
 
-中文：**OmniWorld Engine 是一个 GPU 原生实时 Runtime，通过统一的 World Representation，将视频/传感器、AI 感知、GPU 计算、实时渲染、仿真以及 LLM/VLM/VLA/Agent 连接成一个可闭环运行的系统。**
+## What it is
 
+- **Core:** World Contract v0 (`docs/01-architecture/world-state.md`), the loop runtime (versioned canonical state, frame-budget accounting), grounding metrics (identity stability, transform error vs truth, temporal coherence), a deterministic truth world.
+- **Adapters:** local ONNX perception models, replay data, a tiny dynamics model (Phase 1), external physics (Phase 3) — plus an optional World API scene adapter, never in the benchmark mainline.
+- **Not:** an industrial digital-twin platform, a world-model training project, a game engine/editor/renderer replacement, or a "connect everything" platform. The rule: a feature enters Core only if we can name a metric only OmniWorld can measure.
 
-## Documentation Navigation
+## Documentation
 
-```text
-Current Work
-    ↓
-Development Plan
-    ↓
-Architecture
-    ↓
-Projects
-    ↓
-Knowledge
-    ↓
-Research
-    ↓
-Benchmarks
-```
-
-- Current Work: [`CURRENT.md`](CURRENT.md)
-- Development Plan: [`docs/02-roadmap/development-plan.md`](docs/02-roadmap/development-plan.md)
-- Engineering Lifecycle: [`docs/03-engineering-lifecycle/README.md`](docs/03-engineering-lifecycle/README.md)
-- Architecture: [`docs/01-architecture/system-architecture.md`](docs/01-architecture/system-architecture.md)
-- Projects: [`docs/02-roadmap/project-status.md`](docs/02-roadmap/project-status.md) and [`projects/`](projects/)
-- Knowledge: [`knowledge/`](knowledge/)
-- Research: [`docs/17-research/research-queue.md`](docs/17-research/research-queue.md)
+- Daily entry: [`CURRENT.md`](CURRENT.md)
+- This sprint (30 days): [`docs/02-roadmap/current-sprint.md`](docs/02-roadmap/current-sprint.md)
+- Canonical roadmap + gates: [`docs/02-roadmap/master-roadmap.md`](docs/02-roadmap/master-roadmap.md)
+- World Contract v0: [`docs/01-architecture/world-state.md`](docs/01-architecture/world-state.md)
+- Decisions: [`docs/01-architecture/decisions/`](docs/01-architecture/decisions/)
+- Research queue: [`docs/17-research/research-queue.md`](docs/17-research/research-queue.md); legacy planning material: `docs/99-archive/`
 - Benchmarks: [`benchmarks/`](benchmarks/)
 
-## Vision
+## How to Build and Run
 
-Build a long-term engineering platform for learning and demonstrating how real-world and synthetic-world data can move through GPU systems with minimal practical copies, explicit synchronization, measurable latency, and clean runtime boundaries.
-
-## Why
-
-Modern AI systems increasingly combine video, vision, rendering, simulation, and agents. The hard infrastructure problem is not merely "using a GPU"; it is controlling memory ownership, synchronization, scheduling, profiling, and data contracts across CUDA, Vulkan, video codecs, TensorRT, and external robotics/model ecosystems.
-
-## What It Is
-
-OmniWorld Engine is planned as:
-
-- a C++20/Linux-first GPU runtime;
-- a benchmark-driven media, compute, inference, rendering, and world-state dataflow system;
-- a learning-oriented knowledge base tied to experiments, benchmarks, and project modules;
-- an adapter-friendly infrastructure layer for ROS 2, simulation, LLM/VLM/VLA providers, and robotics demos.
-
-## What OmniWorld Engine Is NOT
-
-- Not an Unreal Engine replacement.
-- Not a complete Apollo/Autoware autonomous-driving stack.
-- Not a CARLA or Isaac Sim replacement.
-- Not a VLA, LLM, or world-model training project.
-- Not a pure video player.
-- Not a pure renderer.
-- Not a ROS 2 project with GPU code bolted on.
-- Not a full physics engine, editor, asset pipeline, scripting system, DDS implementation, or multiplayer framework.
-
-## Architecture
-
-```text
-Applications / Demos
-    │
-Brain & Adapter Layer: LLM / VLM / VLA / ROS 2 / Simulation
-    │
-World Layer: WorldState / Observation / Action / Transition
-    │
-AI & Perception: CUDA / CV-CUDA / TensorRT / Vision
-    │
-Rendering: Vulkan / Render Graph / Observation Output
-    │
-GPU Runtime: Memory / Scheduling / Synchronization / Metrics
-    │
-Media & Data: Camera / Sensor / FFmpeg / NVDEC / NVENC
-    │
-Platform: Linux first, NVIDIA GPU first, Jetson later
+```bash
+cmake -B build -G Ninja && cmake --build build
+./build/runtime_probe            # hardware probe (CPU/CUDA/Vulkan capabilities)
+./build/runtime_probe --json     # machine-readable output
+ctest --test-dir build           # smoke test
 ```
 
-Read the full architecture in [`docs/01-architecture/system-architecture.md`](docs/01-architecture/system-architecture.md).
-
-## Current Status
-
-Current state: **planning, architecture, research organization, and knowledge-base scaffolding**. Engine implementation has not started. Any historical performance or zero-copy numbers are treated as targets or hypotheses until benchmarked in this repository.
-
-## Roadmap
-
-The project progresses through:
-
-1. Knowledge / Foundation
-2. GPU Runtime Skeleton
-3. GPU Video Pipeline
-4. Vulkan Observation Renderer
-5. AI Runtime
-6. World State
-7. Brain / Agent Loop
-8. ROS 2 / Simulation / VLA adapters
-
-See [`docs/02-roadmap/master-roadmap.md`](docs/02-roadmap/master-roadmap.md).
-
-## Projects
-
-Subprojects are documented under [`projects/`](projects/). Each project owns its architecture, roadmap, benchmark plan, notes, and local knowledge base.
-
-## Knowledge Base
-
-The long-term learning system lives under [`knowledge/`](knowledge/). It separates project knowledge, external research, hypotheses, experiments, benchmarks, lessons learned, and review prompts.
-
-## Benchmarks
-
-Benchmark plans live under [`benchmarks/`](benchmarks/) and [`docs/16-benchmarks/`](docs/16-benchmarks/). The goal is to answer: **why is this system fast, and where is it slow?**
-
-## Research
-
-External project and technology research lives under [`docs/17-research/`](docs/17-research/). Legacy planning material is preserved under [`docs/99-archive/`](docs/99-archive/).
-
-## How to Build
-
-No engine code exists yet. The first implementation task is to create the C++20/CMake/Ninja/CUDA/Vulkan capability-probe skeleton.
-
-## How to Run
-
-No runnable demo exists yet. The first runnable target should be an MVP-0 environment probe, followed by a CUDA/Vulkan interop experiment.
+Requires: C++20 compiler, CMake + Ninja; CUDA Toolkit and the system Vulkan loader are auto-detected (optional). The Grounding Loop targets Phase 0 (see sprint).
 
 ## Contributing
 
-Keep facts, plans, hypotheses, experiments, and verified results separate. Every new technical claim should be traceable to project evidence or external sources.
+Keep facts, plans, hypotheses, experiments, and verified results separate. Every technical claim must trace to project evidence or an external primary source. The planning phase is closed: ideas enter via the research queue, not by editing the roadmap.
 
 ## License
 
-License status should be finalized before adding source code or accepting external contributions.
+License status should be finalized before accepting external contributions.

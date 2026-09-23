@@ -1,71 +1,35 @@
 # Current Focus
 
-
-Current Phase: Phase 1 — GPU Runtime Foundation
-
-
-Current Project: GPU Runtime Foundation
-
-Current Goal: Build the first runnable OmniWorld Runtime Probe that reports CPU, GPU, CUDA, Vulkan, VRAM, driver, and runtime configuration.
-
+Current Phase: **Phase 0 — Grounding Loop v0** (first 30 days)
+Current Project: Grounding Loop v0 — one canonical world state, two writers, measurable coherence (ADR-0007).
+Current Week: **Week 2** (see [`docs/02-roadmap/current-sprint.md`](docs/02-roadmap/current-sprint.md) for the full 30-day plan).
 
 ## Learn Now
 
-1. C++20 project structure, CMake/Ninja targets, and Linux runtime discovery.
-2. CUDA device model, memory properties, Stream, Event, async copy, and synchronization.
-3. Vulkan instance, physical device, queue family, memory heap, driver properties, and validation layers.
-4. Benchmark basics: warmup, repeated samples, p50/p95/p99, and reproducible logs.
+1. World Contract v0 semantics (`docs/01-architecture/world-state.md`): entity identity, tick domain, ownership, belief vs truth.
+2. Deterministic seeded simulation basics: fixed-point/stable arithmetic for kinematic integration, reproducibility discipline.
+3. ONNX Runtime C++ API basics for the Week-3 perception adapters (two small detector/segmenter class models).
+4. The loop's frame-budget math from the 2026-09-18 baseline (H2D ~12.7 GiB/s) to size observation transfers.
 
-## Build Now
+## Build Now (Week 2)
 
-1. `runtime_probe` executable.
-2. CPU/OS/runtime configuration probe.
-3. CUDA capability and timing probe.
-4. Vulkan physical-device and validation-layer probe.
-5. Logging, metrics, and one repeatable benchmark/check command.
+1. `src/world_state`: entity registry (runtime-minted ids), tick/clock domain, state versioning, transition logging.
+2. Truth world: N seeded rigid bodies, kinematic integration, deterministic-by-construction.
+3. Offscreen Observation generator (software raster, low resolution).
+4. Determinism test: same seed → bit-identical state/observation sequences (in `ctest`).
+5. Frame-buffer memory metadata compliance (`docs/01-architecture/memory.md` fields).
 
 ## Research Now
 
-- Only research what unblocks the Runtime Probe or a bounded Exploration item.
-- Use `docs/03-engineering-lifecycle/exploration-rules.md` before starting any Spike / PoC.
-- Promote research to Core only through Benchmark → Architecture Review → ADR.
-
-## Engineering Exploration
-
-- CUDA Graph scheduling overhead research for later Phase 1/2 optimization.
-- CUDA ↔ Vulkan external memory/semaphore interop Spike planning only; do not integrate before the GPU Frame contract exists.
-
-## Intelligence Exploration
-
-- World State / World Model / Agent / ROS 2 / VLA reading and Tiny Prototypes are allowed within the weekly exploration budget.
-- Exploration cannot change Core Architecture or replace the active GPU Runtime work.
+- Only what unblocks Week 2/3 code: preprocessor-free determinism pitfalls, ONNX Runtime session setup on the dev machine, metric formulas for identity stability.
+- Standing open Explorations (bounded): WorldFoundry/cosmos-evaluator differential; WorldMark/WBench action vocabulary. Outputs are research notes, never code in Core.
 
 ## Do Not Touch
 
-- Do not make ROS 2, CARLA, Isaac, VLA, World Model, Agent, or Digital Human part of Core now.
-- Do not build a full renderer, full video engine, full game engine, physics engine, editor, mobile runtime, Jetson port, or distributed runtime.
-- Do not connect major modules before an Interface / Data Contract exists.
-- Do not claim performance improvements without Benchmark evidence.
+- No ROS 2, CARLA, Isaac, VLA, World Model training, LLM/agent frameworks, digital human, full renderer, media pipeline, editor, distribution work, or platform evangelism (see `docs/02-roadmap/not-now.md`).
+- No architecture re-litigation inside Phase 0: the World Contract v0 is frozen; issues route to an ADR review at Gate 1, not to mid-sprint rewrites.
+- No performance claims without a regression-report benchmark.
 
-## This Week
+## This Week's Exit
 
-1. Create the C++20/CMake/Ninja project skeleton.
-2. Add the `runtime_probe` target.
-3. Implement CPU and OS/runtime configuration reporting.
-4. Implement CUDA capability probing.
-5. Implement Vulkan physical-device probing.
-6. Add basic logging, error handling, and metrics timestamps.
-7. Record the first probe output under the benchmark workflow.
-
-## Next Milestone
-
-`runtime_probe` builds and runs from a clean checkout with reproducible CPU/GPU/CUDA/Vulkan capability output.
-
-## Definition of Ready
-
-Implementation may proceed when the Runtime Probe problem, inputs, outputs, dependencies, environment assumptions, and benchmark target are clear.
-
-## Definition of Done
-
-Runtime Probe builds and runs locally, prints CPU/GPU/CUDA/Vulkan/VRAM/driver/configuration data, records basic timing metrics, and links code, test/check output, benchmark notes, documentation, and weekly review.
-
+Determinism test passes in CI; observation production ≥ 60 Hz headroom measured and recorded in a benchmark note.
