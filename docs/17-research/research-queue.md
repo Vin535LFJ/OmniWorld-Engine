@@ -15,4 +15,8 @@ Effective 2026-09-21 (ADR-0007). Research does not change the roadmap by itself.
 | OpenUSD one-way export | Low | Intelligence | Research | Future interop with the USD ecosystem; explicitly not compliance. | Post-Gate-2 at the earliest |
 | CUDA Graph scheduling overhead | Low | Engineering | Exploration | May reduce runtime scheduling overhead once the loop's scheduling is measured. | After Phase-0 loop benchmarks show scheduling cost |
 
+| WorldFoundry "comprehensive update" watch | High | Intelligence | Watch | WorldFoundry (Apache-2.0, 318★) announced a late-Sept-2026 update targeting interactive-worlds evaluation; could directly enter our wedge. | On their release; then differential ADR within one week |
+| World-In-World protocol study | Medium | Intelligence | Research | ICLR'26 Oral closed-loop benchmark (world-in-world/world-in-world); its unified action API is our Action-contract alignment reference. | Phase 1–2 |
+| OSS contribution-target issue scan | Medium | Intelligence | Research | Door-opener channel (Track B): concrete contribution points in WorldMark / stable-worldmodel / WBench / cosmos-evaluator per 2026-09-24-github-reuse-map.md §5. | Phase 1 |
+
 Retired items (superseded by ADR-0007): TensorRT dynamic shapes (returns when a phase needs it), CV-CUDA (same), Vulkan Video (same), NITROS (Backlog), CARLA/Isaac adapter boundary research (Backlog), Brain-provider prototype (Backlog). Full landscape rationale: `2026-09-21-direction-decision.md`.

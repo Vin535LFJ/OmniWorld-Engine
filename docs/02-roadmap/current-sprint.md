@@ -13,8 +13,8 @@ Verify: every new document passes the Contract Gate checklist (Input/Output/Owne
 ## Week 2 — World State + truth world + observation
 
 1. Implement WorldState v0 per `../01-architecture/world-state.md`: entity registry (runtime-minted ids), ticks, state versioning, world-transition logging.
-2. Deterministic synthetic truth world: N rigid bodies, seeded, kinematic integration. Determinism test: same seed → bit-identical state/observation sequences.
-3. Offscreen observation generator (low-resolution software raster is sufficient; visual fidelity is not the claim).
+2. Deterministic synthetic truth world: N rigid bodies, seeded, kinematic integration. Component choice (2026-09-24 reuse map): our own ~2-page integrator is primary (determinism stays fully ours); Jolt Physics (MIT, documented determinism contract) is the vendor fallback for later phases. Determinism test: same seed → bit-identical state/observation sequences.
+3. Offscreen observation generator (low-resolution software raster is sufficient; visual fidelity is not the claim). Component choice: our own ~200-line CPU rasterizer at 224×224 (bit-exact, zero deps); design reference zauonlok/renderer (MIT); ssloy/tinyrenderer has NO license — reference only, never copy.
 4. Memory-contract compliance for the frame buffer (fields from `../01-architecture/memory.md`): backend/device/format/dimensions/lifetime/sync state/timestamp declared.
 
 Verify: determinism test passes in CI (`ctest`); observation production ≥ 60 Hz headroom measured and recorded.
@@ -22,7 +22,7 @@ Verify: determinism test passes in CI (`ctest`); observation production ≥ 60 H
 ## Week 3 — Perception adapters ×2 + loop closure
 
 1. Perception Adapter Contract frozen (same Gate fields as Week 1 checklist) covering: input observation metadata, output proposals (`target`, fields, `confidence`, `tick_observed`).
-2. Two DIFFERENT local ONNX perception models (e.g., two lightweight detector/segmenter classes) wired through the contract.
+2. Two DIFFERENT local ONNX perception models wired through the contract. Component choices (2026-09-24 reuse map; licenses verified): **RT-DETRv2-S** detector (Apache-2.0, official export_onnx.py) + **Depth-Anything-V2-Small** (Apache-2.0 — Small ONLY; self-export ONNX from official .pth) or PP-YOLOE / MobileSAM as alternatives. ONNX Runtime via NuGet `Microsoft.ML.OnnxRuntime.Gpu.Windows` (MIT). AVOID: anything Ultralytics / FastSAM / boxmot (AGPL-3.0). Association logic is implemented IN CORE (~200 lines, IoU gating + Hungarian + constant-velocity Kalman); Vertical-Beach/ByteTrack-cpp (MIT) is read-only reference.
 3. Ownership adjudication: truth owns kinematics; perception writes belief-layer proposals; runtime records applied/rejected with reasons.
 4. First coherence metrics: identity stability (association accuracy), transform error (belief vs truth), confidence-calibration behavior.
 
@@ -33,6 +33,7 @@ Verify: loop closes (State → Observation → Perception → Proposals → Adju
 1. Full benchmark run: per-stage p50/p95 latency decomposition, end-to-end loop rate, adapter-invariance test (swap the second perception model with zero core edits — Gate 1b evidence).
 2. Regression report written to `benchmarks/regression/` with the full environment metadata discipline of the 2026-09-18 baseline.
 3. Gate 1 verdict recorded in this file and in the regression report: PASS (proceed to Phase 1) / SHRINK MVP (reduce resolution, drop render stage) / REVISE CONTRACT.
+4. Engineering note draft (portfolio artifact): one diagram + the three Gate-1 measurements + what the loop is — publishable as a repo page and reusable as a conversation piece with evaluation teams.
 
 ## Environment deviation (recorded)
 

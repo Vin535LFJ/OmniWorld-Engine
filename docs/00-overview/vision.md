@@ -39,4 +39,8 @@ Cross-model grounding: how perception models, predictive/generative world models
 - Not a game engine, editor, physics engine, renderer, or ROS replacement.
 - Not a "connect everything" platform: **a feature enters Core only when we can name the metric only OmniWorld can measure.**
 
+## Success Model (two tracks, added 2026-09-24 per owner decision)
+
+**Track A — ecosystem adoption** (the North Star above): evaluation teams and researchers actually use OmniWorld. **Track B — personal craft + door-opener**: the skills and public artifacts produced by the main line (reproducible benchmark reports, a runnable harness, merged PRs into evaluation-ecosystem OSS, engineering write-ups) are themselves a target outcome — the portfolio that opens collaboration with the teams building this frontier (NVIDIA Omniverse/Cosmos/Isaac, World Labs, DeepMind, Hugging Face, robotics-sim teams). Track B never substitutes for technical falsification: Gate 1 still judges the thesis on measurements alone. Gates 2/3 are dual-track: external adoption **or** door-opener evidence counts. Discipline unchanged: nothing enters the main line merely to look impressive.
+
 Thesis → contract → roadmap: [`world-state.md`](../01-architecture/world-state.md) · [`master-roadmap.md`](../02-roadmap/master-roadmap.md) · [`current-sprint.md`](../02-roadmap/current-sprint.md)
