@@ -2,6 +2,8 @@
 
 [English README](README.md)
 
+📖 **跟丢了项目现状？从 Owner 导读系列开始读 → [`docs/19-owner-briefing/`](docs/19-owner-briefing/)**
+
 **OmniWorld Engine 是一个开放的 runtime：让感知模型、世界模型、仿真器、渲染器和智能体，在同一个可测量的、持续演化的世界状态上保持一致。**
 
 交互式世界模型正被要求成为"世界模拟器"和"训练智能体的环境"，但今天没有任何开放系统让它们与真值仿真器、智能体共享一个带明确契约（身份 identity / 时间 time / 所有权 ownership / 置信度 confidence）的活世界状态——这个能力要么被锁在 NVIDIA 的专有栈里（Mega Omniverse Blueprint / `ovstage`），要么在每个交互世界模型评测项目里被手工重写。OmniWorld 就是这个闭环的开放中立版本：grounding 被**测量**，而不是被假设。

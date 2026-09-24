@@ -2,6 +2,8 @@
 
 [中文说明 / Chinese README](README.zh-CN.md)
 
+📖 **Lost track of the project? Start with the owner briefing series → [`docs/19-owner-briefing/`](docs/19-owner-briefing/)**
+
 **OmniWorld Engine is the open runtime that keeps heterogeneous AI systems — perception models, world models, simulators, renderers, and agents — grounded in one evolving, measurable world state.**
 
 Interactive world models are being asked to become "world simulators" and "environments for training agents", yet no open system lets them share one live world state with a ground-truth simulator and an agent under explicit contracts (identity, time, ownership, confidence). That capability is either locked inside NVIDIA's proprietary stack (Mega Omniverse Blueprint / `ovstage`) or hand-rewritten inside every interactive world-model evaluation project. OmniWorld is the open, neutral runtime for that loop — grounding measured, not assumed.
