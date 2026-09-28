@@ -1,35 +1,23 @@
-# Current Focus
+# CURRENT — 本周唯一焦点
 
-Current Phase: **Phase 0 — Grounding Loop v0** (first 30 days)
-Current Project: Grounding Loop v0 — one canonical world state, two writers, measurable coherence (ADR-0007).
-Current Week: **Week 2** (see [`docs/02-roadmap/current-sprint.md`](docs/02-roadmap/current-sprint.md) for the full 30-day plan).
+> 只回答一个问题：**这周写什么代码。** 背景与全貌见 [`PLAN.md`](PLAN.md)。
 
-## Learn Now
+**本周 = Week 2（Grounding Loop v0 第 2 周）**
 
-1. World Contract v0 semantics (`docs/01-architecture/world-state.md`): entity identity, tick domain, ownership, belief vs truth.
-2. Deterministic seeded simulation basics: fixed-point/stable arithmetic for kinematic integration, reproducibility discipline.
-3. ONNX Runtime C++ API basics for the Week-3 perception adapters (two small detector/segmenter class models).
-4. The loop's frame-budget math from the 2026-09-18 baseline (H2D ~12.7 GiB/s) to size observation transfers.
+## 本周交付（就这四件）
 
-## Build Now (Week 2)
+1. `src/world_state`：实体注册表（runtime 铸 ID）、tick 时钟域、状态版本号、transition 日志——字段照 [`PLAN.md`](PLAN.md) 第五节，一个不多一个不少。
+2. 确定性真值世界：N 个刚体、定种子、运动学推进。
+3. 离屏 Observation 生成器（~200 行 CPU 光栅，224×224，画面丑无所谓）。
+4. 确定性测试：同种子两遍，状态与观测序列逐字节一致（进 `ctest`）。
 
-1. `src/world_state`: entity registry (runtime-minted ids), tick/clock domain, state versioning, transition logging.
-2. Truth world: N seeded rigid bodies, kinematic integration, deterministic-by-construction.
-3. Offscreen Observation generator (software raster, low resolution).
-4. Determinism test: same seed → bit-identical state/observation sequences (in `ctest`).
-5. Frame-buffer memory metadata compliance (`docs/01-architecture/memory.md` fields).
+## 出口条件
 
-## Research Now
+- 确定性测试在 CI 通过；
+- Observation 产出 ≥60Hz（实测数字记进 benchmark note）。
 
-- Only what unblocks Week 2/3 code: preprocessor-free determinism pitfalls, ONNX Runtime session setup on the dev machine, metric formulas for identity stability.
-- Standing open Explorations (bounded): WorldFoundry/cosmos-evaluator differential; WorldMark/WBench action vocabulary. Outputs are research notes, never code in Core.
+## 不碰
 
-## Do Not Touch
+- 不接任何模型（Week 3 的事）、不装 TensorRT、不碰 Vulkan 渲染、不写文档（除非代码需要）、想法一律去 `docs/17-research/research-queue.md`。
 
-- No ROS 2, CARLA, Isaac, VLA, World Model training, LLM/agent frameworks, digital human, full renderer, media pipeline, editor, distribution work, or platform evangelism (see `docs/02-roadmap/not-now.md`).
-- No architecture re-litigation inside Phase 0: the World Contract v0 is frozen; issues route to an ADR review at Gate 1, not to mid-sprint rewrites.
-- No performance claims without a regression-report benchmark.
-
-## This Week's Exit
-
-Determinism test passes in CI; observation production ≥ 60 Hz headroom measured and recorded in a benchmark note.
+完成后说"开始 Week 3"。

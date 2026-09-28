@@ -2,61 +2,36 @@
 
 [中文说明 / Chinese README](README.zh-CN.md)
 
-📖 **Lost track of the project? Start with the owner briefing series → [`docs/19-owner-briefing/`](docs/19-owner-briefing/)**
+**OmniWorld 是一个开放运行时：让感知模型、世界模型、仿真器、渲染器、智能体共享同一个可测量的"活世界状态"。** 第一站是交互式世界模型的闭环评测 harness——那是十几个学术评测团队正在重复手写的东西。
 
-**OmniWorld Engine is the open runtime that keeps heterogeneous AI systems — perception models, world models, simulators, renderers, and agents — grounded in one evolving, measurable world state.**
+## 文档只有三份
 
-Interactive world models are being asked to become "world simulators" and "environments for training agents", yet no open system lets them share one live world state with a ground-truth simulator and an agent under explicit contracts (identity, time, ownership, confidence). That capability is either locked inside NVIDIA's proprietary stack (Mega Omniverse Blueprint / `ovstage`) or hand-rewritten inside every interactive world-model evaluation project. OmniWorld is the open, neutral runtime for that loop — grounding measured, not assumed.
+| 文件 | 作用 |
+|---|---|
+| [`PLAN.md`](PLAN.md) | **唯一必读**：是什么/为什么/路线图与 Gate/World Contract v0/组件选型/许可红线 |
+| [`CURRENT.md`](CURRENT.md) | 本周唯一焦点（现在 = Week 2：`src/world_state` + 确定性真值世界） |
+| `docs/17-research/` | 证据层：方向决策报告（2026-09-21）、GitHub 复用地图（2026-09-24）、研究队列 |
 
-中文：**OmniWorld Engine 是一个开放的实时 runtime，让感知模型、世界模型、仿真器、渲染器与智能体在同一个可测量的、持续演化的世界状态上保持一致（identity / time / ownership / confidence 契约）。它首个立足点是交互式世界模型的闭环评测 harness。**
+其余历史文档（旧规划、治理、导读系列、两份研究报告）全部在 `docs/99-archive/`，只查不读。
 
-## 🚧 Current Development Focus
+## 当前状态
 
-Phase: **Phase 0 — Grounding Loop v0** (first 30 days; direction decision 2026-09-21, see [`ADR-0007`](docs/01-architecture/decisions/ADR-0007-project-direction.md))
+- 方向已定案（2026-09-21，评测优先的 grounding-loop runtime），规划阶段关闭。
+- 已有代码：`src/runtime_probe`（C++20 硬件探针，2026-09-18 baseline）。
+- 下一步：**Week 2 —— `src/world_state` 与确定性真值世界**（见 [`CURRENT.md`](CURRENT.md)）。
 
-Current Goal: prove the Minimum Viable Thesis on an RTX 4060 8 GB — a deterministic synthetic world, two local perception adapters, ownership adjudication, and coherence metrics, in a closed loop at interactive rate, with three explicit falsification criteria (Gate 1 in [`current-sprint.md`](docs/02-roadmap/current-sprint.md)).
-
-Status: planning is **closed and frozen** (2026-09-21). `runtime_probe` (C++20 CPU/CUDA/Vulkan hardware probe) builds and is committed; the first regression baseline exists at `benchmarks/regression/2026-09-18-runtime-probe-baseline.md`.
-
-## Why now
-
-- 2025–2026 interactive world-model evaluation fragmented (WBench, WorldMark, WorldArena, KineBench, ...): every team re-implements action adapters, state schemas, and simulator couplings. WorldMark: *"no shared protocol has been established."*
-- The industrial version of the "world runtime" is proprietary and NVIDIA-ecosystem-only; AOUSD's ratified spec covers scene description, not runtime semantics.
-- No open player ships a runtime layer: Genie 3 has no API; World Labs ships world generation + persistent assets, not a live stateful runtime.
-
-Full evidence: [`docs/17-research/2026-09-21-direction-decision.md`](docs/17-research/2026-09-21-direction-decision.md).
-
-## What it is
-
-- **Core:** World Contract v0 (`docs/01-architecture/world-state.md`), the loop runtime (versioned canonical state, frame-budget accounting), grounding metrics (identity stability, transform error vs truth, temporal coherence), a deterministic truth world.
-- **Adapters:** local ONNX perception models, replay data, a tiny dynamics model (Phase 1), external physics (Phase 3) — plus an optional World API scene adapter, never in the benchmark mainline.
-- **Not:** an industrial digital-twin platform, a world-model training project, a game engine/editor/renderer replacement, or a "connect everything" platform. The rule: a feature enters Core only if we can name a metric only OmniWorld can measure.
-
-## Documentation
-
-- Daily entry: [`CURRENT.md`](CURRENT.md)
-- This sprint (30 days): [`docs/02-roadmap/current-sprint.md`](docs/02-roadmap/current-sprint.md)
-- Canonical roadmap + gates: [`docs/02-roadmap/master-roadmap.md`](docs/02-roadmap/master-roadmap.md)
-- World Contract v0: [`docs/01-architecture/world-state.md`](docs/01-architecture/world-state.md)
-- Decisions: [`docs/01-architecture/decisions/`](docs/01-architecture/decisions/)
-- Research queue: [`docs/17-research/research-queue.md`](docs/17-research/research-queue.md); legacy planning material: `docs/99-archive/`
-- Benchmarks: [`benchmarks/`](benchmarks/)
-
-## How to Build and Run
+## 构建与运行
 
 ```bash
 cmake -B build -G Ninja && cmake --build build
-./build/runtime_probe            # hardware probe (CPU/CUDA/Vulkan capabilities)
-./build/runtime_probe --json     # machine-readable output
-ctest --test-dir build           # smoke test
+./build/runtime_probe            # CPU/CUDA/Vulkan 能力探针
+./build/runtime_probe --json     # 机器可读输出
+ctest --test-dir build           # 冒烟测试
 ```
 
-Requires: C++20 compiler, CMake + Ninja; CUDA Toolkit and the system Vulkan loader are auto-detected (optional). The Grounding Loop targets Phase 0 (see sprint).
+要求：C++20 编译器、CMake + Ninja；CUDA 与 Vulkan loader 自动检测（可选）。
 
-## Contributing
+## 规则
 
-Keep facts, plans, hypotheses, experiments, and verified results separate. Every technical claim must trace to project evidence or an external primary source. The planning phase is closed: ideas enter via the research queue, not by editing the roadmap.
-
-## License
-
-License status should be finalized before accepting external contributions.
+- 事实与主张分离：每个技术论断必须可追溯到仓库证据或外部原始来源。
+- 代码未跑通前不加新文档；新想法进研究队列，不进 sprint。
