@@ -2,11 +2,14 @@ cmake_minimum_required(VERSION 3.20)
 
 project(omniworld_runtime
   VERSION 0.1.0
-  DESCRIPTION "OmniWorld GPU runtime probes"
+  DESCRIPTION "OmniWorld Engine — grounding-loop runtime + hardware probes"
   LANGUAGES CXX)
 
 find_package(CUDAToolkit QUIET)
 
+# ---------------------------------------------------------------------------
+# runtime_probe (unchanged): hardware capability probe + smoke benchmark
+# ---------------------------------------------------------------------------
 add_executable(runtime_probe
   src/runtime_probe/main.cpp
   src/runtime_probe/report.cpp
@@ -32,6 +35,65 @@ else()
   message(WARNING "CUDAToolkit not found; runtime_probe reports CUDA as unavailable")
 endif()
 
+# ---------------------------------------------------------------------------
+# ow_core — World Contract v0 + truth world + observation + perception
+# adapters (self-registering) + the grounding loop. Zero external deps.
+# ---------------------------------------------------------------------------
+# OBJECT library: forces every adapter object (and its self-registration
+# static initializer) into consumers — a plain static lib would drop
+# unreferenced registrars on MSVC and the adapter registry would be empty.
+add_library(ow_core OBJECT
+  src/world_state/world_state.cpp
+  src/truth_world/truth_world.cpp
+  src/observation/raster.cpp
+  src/perception/registry.cpp
+  src/perception/blob_cc.cpp
+  src/perception/blob_grid.cpp
+  src/perception/blob_cc_miscalibrated.cpp
+  src/grounding_loop/loop.cpp)
+
+target_include_directories(ow_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set_target_properties(ow_core PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+
+if(MSVC)
+  target_compile_options(ow_core PRIVATE /utf-8 /permissive- /W4)
+else()
+  target_compile_options(ow_core PRIVATE -Wall -Wextra)
+endif()
+
+# ---------------------------------------------------------------------------
+# apps
+# ---------------------------------------------------------------------------
+add_executable(omniworld_loop apps/omniworld_loop.cpp)
+target_link_libraries(omniworld_loop PRIVATE ow_core)
+set_target_properties(omniworld_loop PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(MSVC)
+  target_compile_options(omniworld_loop PRIVATE /utf-8 /permissive- /W4)
+else()
+  target_compile_options(omniworld_loop PRIVATE -Wall -Wextra)
+endif()
+
+# ---------------------------------------------------------------------------
+# tests
+# ---------------------------------------------------------------------------
+add_executable(ow_tests tests/ow_tests.cpp)
+target_link_libraries(ow_tests PRIVATE ow_core)
+set_target_properties(ow_tests PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(MSVC)
+  target_compile_options(ow_tests PRIVATE /utf-8 /permissive- /W4)
+else()
+  target_compile_options(ow_tests PRIVATE -Wall -Wextra)
+endif()
+
 if(MSVC)
   target_compile_options(runtime_probe PRIVATE /utf-8 /permissive- /W4)
 else()
@@ -40,3 +102,6 @@ endif()
 
 enable_testing()
 add_test(NAME runtime_probe_smoke COMMAND runtime_probe --json)
+add_test(NAME ow_determinism COMMAND ow_tests determinism)
+add_test(NAME ow_association COMMAND ow_tests association)
+add_test(NAME ow_registry COMMAND ow_tests registry)

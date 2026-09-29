@@ -1,0 +1,21 @@
+{
+  "seed": 42, "bodies": 12, "ticks": 600,
+  "end_to_end_hz": 1106.69, "total_wall_s": 0.542159,
+  "final_state_digest": "7d22caf5dc9d3bf5", "final_image_digest": "e9ecc52536c7269b",
+  "stages": {
+    "adjudicate:blob_cc": {"p50_us": 0.8, "p95_us": 2.2},
+    "adjudicate:blob_cc_miscalibrated": {"p50_us": 1.5, "p95_us": 4.7},
+    "adjudicate:blob_grid": {"p50_us": 0.8, "p95_us": 2.2},
+    "detect:blob_cc": {"p50_us": 266.9, "p95_us": 306.395},
+    "detect:blob_cc_miscalibrated": {"p50_us": 265.6, "p95_us": 315.94},
+    "detect:blob_grid": {"p50_us": 282.3, "p95_us": 345.615},
+    "render": {"p50_us": 58.4, "p95_us": 67.92},
+    "truth_step": {"p50_us": 0.3, "p95_us": 0.8}
+  },
+  "producers": [
+    {"producer": "blob_cc", "n_proposals": 7080, "n_applied": 7080, "identity_stability": 0.992373, "mean_transform_error": 0.00113717, "high_conf_wrong_rate": 0.00762712, "ece": 0.0115388},
+    {"producer": "blob_cc_miscalibrated", "n_proposals": 7080, "n_applied": 7080, "identity_stability": 0.992373, "mean_transform_error": 0.00113717, "high_conf_wrong_rate": 0, "ece": 0.973207},
+    {"producer": "blob_grid", "n_proposals": 6070, "n_applied": 5720, "identity_stability": 0.952448, "mean_transform_error": 0.00528779, "high_conf_wrong_rate": 0, "ece": 0.595596}
+  ],
+  "gate1": {"a_hz_pass": true, "b_adapter_only": true, "c_discrimination": 0.961668, "verdict": "PASS"}
+}
