@@ -6,7 +6,7 @@
 
 ## 本周交付（就这四件）
 
-1. `src/world_state`：实体注册表（runtime 铸 ID）、tick 时钟域、状态版本号、transition 日志——字段照 [`PLAN.md`](PLAN.md) 第五节，一个不多一个不少。
+1. `src/world_state`：实体注册表（runtime 铸 ID）、tick 时钟域、状态版本号、transition 日志——字段照 [`PLAN.md`](PLAN.md) 第七节（World Contract v0），一个不多一个不少。
 2. 确定性真值世界：N 个刚体、定种子、运动学推进。
 3. 离屏 Observation 生成器（~200 行 CPU 光栅，224×224，画面丑无所谓）。
 4. 确定性测试：同种子两遍，状态与观测序列逐字节一致（进 `ctest`）。
