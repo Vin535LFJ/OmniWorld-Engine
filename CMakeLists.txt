@@ -50,7 +50,15 @@ add_library(ow_core OBJECT
   src/perception/blob_cc.cpp
   src/perception/blob_grid.cpp
   src/perception/blob_cc_miscalibrated.cpp
-  src/grounding_loop/loop.cpp)
+  src/grounding_loop/loop.cpp
+  src/grounding_loop/phase1.cpp
+  src/models/world_model_registry.cpp
+  src/models/rollout.cpp
+  src/models/replay_model.cpp
+  src/models/linear_model.cpp
+  src/models/zero_model.cpp
+  src/models/mlp.cpp
+  src/models/mlp_model.cpp)
 
 target_include_directories(ow_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_target_properties(ow_core PROPERTIES
@@ -105,3 +113,4 @@ add_test(NAME runtime_probe_smoke COMMAND runtime_probe --json)
 add_test(NAME ow_determinism COMMAND ow_tests determinism)
 add_test(NAME ow_association COMMAND ow_tests association)
 add_test(NAME ow_registry COMMAND ow_tests registry)
+add_test(NAME ow_phase1 COMMAND ow_tests phase1)

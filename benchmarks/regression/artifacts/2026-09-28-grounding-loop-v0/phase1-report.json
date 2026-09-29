@@ -1,0 +1,10 @@
+{
+  "seed": 42, "bodies": 12, "ticks": 600,
+  "rollout_digest": "4c594db6962cd149",
+  "models": [
+    {"model": "linear", "n_predictions": 7200, "mean_divergence": 0.000217593, "max_divergence": 0.0341945, "fit_s": 1e-07, "fit_metric": 0, "predict_p50_us": 0.3, "predict_p95_us": 0.3},
+    {"model": "mlp_dynamics", "n_predictions": 7200, "mean_divergence": 0.0117366, "max_divergence": 0.0291756, "fit_s": 0.0800159, "fit_metric": 0.000131505, "predict_p50_us": 1.8, "predict_p95_us": 2.1},
+    {"model": "replay", "n_predictions": 7200, "mean_divergence": 0, "max_divergence": 0, "fit_s": 0, "fit_metric": 0, "predict_p50_us": 0.8, "predict_p95_us": 1},
+    {"model": "zero_delta", "n_predictions": 7200, "mean_divergence": 0.0136741, "max_divergence": 0.0187456, "fit_s": 0, "fit_metric": 0, "predict_p50_us": 0.3, "predict_p95_us": 0.3}
+  ]
+}

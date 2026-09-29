@@ -1,6 +1,9 @@
-// omniworld_loop — Grounding Loop v0 runner: executes the closed loop,
-// prints the coherence report, and evaluates Gate 1 (PLAN.md section 6).
+// omniworld_loop — runner for both loop stages:
+//   phase0 (default): Grounding Loop v0 — Gate 1 (PLAN.md section 6)
+//   phase1: world models in the loop — prediction-vs-truth divergence
 #include "grounding_loop/loop.hpp"
+#include "grounding_loop/phase1.hpp"
+#include "models/rollout.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -31,7 +34,8 @@ struct Args {
   std::uint64_t seed = 42;
   int ticks = 600;
   int bodies = 12;
-  std::string out;  // optional artifacts dir for the json report
+  std::string mode = "phase0";  // phase0 | phase1
+  std::string out;              // optional artifacts dir for the json report
 };
 
 Args parse_args(int argc, char** argv) {
@@ -44,6 +48,7 @@ Args parse_args(int argc, char** argv) {
     if (k == "--seed") a.seed = std::strtoull(next().c_str(), nullptr, 10);
     else if (k == "--ticks") a.ticks = std::atoi(next().c_str());
     else if (k == "--bodies") a.bodies = std::atoi(next().c_str());
+    else if (k == "--mode") a.mode = next();
     else if (k == "--out") a.out = next();
   }
   return a;
@@ -58,10 +63,95 @@ std::string json_escape(const std::string& s) {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Phase 1: world models in the loop — divergence report
+// ---------------------------------------------------------------------------
+int run_phase1(const Args& args) {
+  ow::Phase1Config cfg;
+  cfg.seed = args.seed;
+  cfg.ticks = args.ticks;
+  cfg.n_bodies = args.bodies;
+
+  std::cout << "omniworld_loop: Phase 1 — world models in the loop\n";
+  std::cout << "  seed=" << cfg.seed << " bodies=" << cfg.n_bodies
+            << " ticks=" << cfg.ticks << "\n";
+
+  const ow::Phase1Result r = ow::run_world_model_eval(cfg);
+
+  std::cout << "\n== Rollout ==\n";
+  std::cout << "  rollout_digest : " << std::hex << r.rollout_digest
+            << std::dec << "\n";
+  std::cout << "\n== Prediction-vs-truth divergence ==\n";
+  std::cout << "  model            n_pred   mean_div    max_div   fit_s   fit_metric   pred_p50_us\n";
+  for (const auto& m : r.models) {
+    std::cout << "  " << std::left << std::setw(16) << m.model << std::right
+              << std::setw(7) << m.n_predictions << std::fixed
+              << std::setprecision(6)
+              << std::setw(11) << m.mean_divergence
+              << std::setw(11) << m.max_divergence
+              << "  " << std::setprecision(3) << m.fit_s
+              << "  " << std::setw(10) << std::setprecision(6) << m.fit_metric
+              << "  " << std::setw(9) << std::setprecision(2)
+              << m.predict_p50_us << "\n";
+  }
+  const ow::ModelEval* replay = nullptr;
+  const ow::ModelEval* mlp = nullptr;
+  const ow::ModelEval* zero = nullptr;
+  for (const auto& m : r.models) {
+    if (m.model == "replay") replay = &m;
+    if (m.model == "mlp_dynamics") mlp = &m;
+    if (m.model == "zero_delta") zero = &m;
+  }
+  std::cout << "\n== Sanity ordering (oracle/baselines) ==\n";
+  if (replay)
+    std::cout << "  replay mean divergence == 0 : "
+              << (replay->mean_divergence == 0.0 ? "OK" : "BUG") << " ("
+              << replay->mean_divergence << ")\n";
+  if (replay && zero && mlp) {
+    std::cout << "  zero_delta is the floor     : "
+              << (zero->mean_divergence > mlp->mean_divergence ? "OK" : "WARN")
+              << " (zero=" << zero->mean_divergence
+              << " mlp=" << mlp->mean_divergence << ")\n";
+  }
+
+  if (!args.out.empty()) {
+    const bool rollout_ok = ow::write_rollout_text(
+        ow::record_rollout(cfg.seed, cfg.n_bodies, cfg.ticks),
+        args.out + "/rollout.txt");
+    std::ostringstream js;
+    js << "{\n";
+    js << "  \"seed\": " << r.seed << ", \"bodies\": " << r.n_bodies
+       << ", \"ticks\": " << r.ticks << ",\n";
+    js << "  \"rollout_digest\": \"" << std::hex << r.rollout_digest
+       << std::dec << "\",\n";
+    js << "  \"models\": [\n";
+    for (std::size_t i = 0; i < r.models.size(); ++i) {
+      const auto& m = r.models[i];
+      js << "    {\"model\": \"" << json_escape(m.model)
+         << "\", \"n_predictions\": " << m.n_predictions
+         << ", \"mean_divergence\": " << m.mean_divergence
+         << ", \"max_divergence\": " << m.max_divergence
+         << ", \"fit_s\": " << m.fit_s << ", \"fit_metric\": " << m.fit_metric
+         << ", \"predict_p50_us\": " << m.predict_p50_us
+         << ", \"predict_p95_us\": " << m.predict_p95_us << "}";
+      js << (i + 1 < r.models.size() ? "," : "") << "\n";
+    }
+    js << "  ]\n}\n";
+    const std::string path = args.out + "/phase1-report.json";
+    std::ofstream f(path, std::ios::binary);
+    f << js.str();
+    std::cout << "\n  report written: " << path
+              << (rollout_ok ? " (+ rollout.txt)" : "") << "\n";
+  }
+  return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
   const Args args = parse_args(argc, argv);
+
+  if (args.mode == "phase1") return run_phase1(args);
 
   ow::LoopConfig cfg;
   cfg.seed = args.seed;

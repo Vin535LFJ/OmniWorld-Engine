@@ -4,6 +4,10 @@
 //   ow_tests association   WorldState adjudication unit rules
 //   ow_tests registry      adapter self-registration contract
 #include "grounding_loop/loop.hpp"
+#include "grounding_loop/phase1.hpp"
+#include "models/mlp.hpp"
+#include "models/rollout.hpp"
+#include "models/world_model.hpp"
 #include "observation/raster.hpp"
 #include "perception/adapter.hpp"
 #include "truth_world/truth_world.hpp"
@@ -139,17 +143,108 @@ int test_registry() {
   return 0;
 }
 
+int test_phase1() {
+  // world-model registry: the four Phase-1 models self-registered
+  const std::vector<std::string> names = ow::world_model_names();
+  bool has_replay = false, has_linear = false, has_zero = false, has_mlp = false;
+  for (const auto& n : names) {
+    if (n == "replay") has_replay = true;
+    if (n == "linear") has_linear = true;
+    if (n == "zero_delta") has_zero = true;
+    if (n == "mlp_dynamics") has_mlp = true;
+  }
+  if (!has_replay || !has_linear || !has_zero || !has_mlp)
+    return fail("expected world models missing from registry");
+
+  // rollout recording is deterministic
+  const ow::Rollout a = ow::record_rollout(7, 6, 50);
+  const ow::Rollout b = ow::record_rollout(7, 6, 50);
+  if (a.ticks.size() != b.ticks.size()) return fail("rollout length mismatch");
+  for (std::size_t t = 0; t < a.ticks.size(); ++t) {
+    const auto& ta = a.ticks[t];
+    const auto& tb = b.ticks[t];
+    if (ta.entities.size() != tb.entities.size())
+      return fail("rollout entity count mismatch");
+    for (std::size_t i = 0; i < ta.entities.size(); ++i) {
+      const auto& ea = ta.entities[i];
+      const auto& eb = tb.entities[i];
+      if (ea.id != eb.id || ea.pos.x != eb.pos.x || ea.pos.y != eb.pos.y ||
+          ea.vel.x != eb.vel.x || ea.vel.y != eb.vel.y)
+        return fail("rollout bit-exact mismatch");
+    }
+  }
+
+  // MLP training is deterministic (same data + seed => same weights)
+  std::vector<float> inputs, targets;
+  int n = 0;
+  for (std::size_t t = 0; t + 1 < a.ticks.size(); ++t) {
+    for (const auto& e : a.ticks[t].entities) {
+      const ow::RolloutEntity* rec = nullptr;
+      for (const auto& cand : a.ticks[t + 1].entities) {
+        if (cand.id == e.id) { rec = &cand; break; }
+      }
+      if (!rec) continue;
+      float in[ow::MlpModel::kIn];
+      ow::mlp_input(e.class_index, e.pos, e.vel, in);
+      for (float v : in) inputs.push_back(v);
+      targets.push_back(rec->pos.x);
+      targets.push_back(rec->pos.y);
+      ++n;
+    }
+  }
+  ow::MlpModel m1, m2;
+  ow::mlp_train(m1, inputs, targets, n, 5, 0.05f, 42);
+  ow::mlp_train(m2, inputs, targets, n, 5, 0.05f, 42);
+  if (ow::mlp_weights_digest(m1) != ow::mlp_weights_digest(m2))
+    return fail("MLP training not deterministic");
+  ow::MlpModel m3;
+  ow::mlp_train(m3, inputs, targets, n, 5, 0.05f, 43);
+  if (ow::mlp_weights_digest(m1) == ow::mlp_weights_digest(m3))
+    return fail("different training seed gave identical weights");
+
+  // evaluation loop: oracle is exact; baselines ordered; MLP learns
+  ow::Phase1Config cfg;
+  cfg.seed = 7;
+  cfg.n_bodies = 6;
+  cfg.ticks = 120;
+  const ow::Phase1Result r = ow::run_world_model_eval(cfg);
+  const ow::ModelEval* replay = nullptr;
+  const ow::ModelEval* linear = nullptr;
+  const ow::ModelEval* zero = nullptr;
+  const ow::ModelEval* mlp = nullptr;
+  for (const auto& m : r.models) {
+    if (m.model == "replay") replay = &m;
+    if (m.model == "linear") linear = &m;
+    if (m.model == "zero_delta") zero = &m;
+    if (m.model == "mlp_dynamics") mlp = &m;
+  }
+  if (!replay || !linear || !zero || !mlp)
+    return fail("phase1 eval missing models");
+  if (replay->n_predictions == 0) return fail("replay produced no predictions");
+  if (replay->mean_divergence != 0.0)
+    return fail("replay oracle diverged (eval pipeline bug)");
+  if (!(linear->mean_divergence < zero->mean_divergence))
+    return fail("linear should beat zero_delta on a moving world");
+  if (!(mlp->mean_divergence < zero->mean_divergence))
+    return fail("MLP failed to beat the static-world floor");
+  std::printf(
+      "PASS phase1 (replay=0, linear=%.6f < zero=%.6f, mlp=%.6f < zero)\n",
+      linear->mean_divergence, zero->mean_divergence, mlp->mean_divergence);
+  return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
   if (argc < 2) {
-    std::printf("usage: ow_tests <determinism|association|registry>\n");
+    std::printf("usage: ow_tests <determinism|association|registry|phase1>\n");
     return 1;
   }
   const std::string t = argv[1];
   if (t == "determinism") return test_determinism();
   if (t == "association") return test_association();
   if (t == "registry") return test_registry();
+  if (t == "phase1") return test_phase1();
   std::printf("unknown test: %s\n", t.c_str());
   return 1;
 }
