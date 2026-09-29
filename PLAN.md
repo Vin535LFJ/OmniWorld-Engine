@@ -96,12 +96,14 @@
 
 **明确不进 v0**：多坐标系树、分布式状态、概率分布字段、语义层级/关系、生成式表示共存、OpenUSD 导出、显示渲染（v0 离屏）。
 
-## 八、前 30 天（详细版见归档 current-sprint.md）
+**v0.1 冻结（2026-09-28，依 Phase 0/1 实测）**：语义零改动；补充 as-built 事实——① 第二类参与者"世界模型适配器"（`predict(t, entities) → proposals`，`target_hint` 作为指标侧证据）；② 回放格式 rollout.txt（tab 分隔 tick/id/class/x/z/vx/vz）；③ 评测中世界模型 confidence 固定 0.5，逐模型置信度估计为 v0.2 工作；④ belief 层只记录不改动拥有字段（已由测试守护）。证据：两份 regression 报告。
+
+## 八、前 30 天（执行状态：Phase 0 + Phase 1 已于 2026-09-28 完成）
 
 - **Week 1（已完成）**：方向落库 + 代码保真 + 归档。
-- **Week 2（下一步）**：`src/world_state`（实体注册表/tick/版本/transition 日志）+ 确定性真值世界（N 刚体定种子运动学）+ 离屏 Observation + 确定性测试（同种子逐字节一致，进 ctest）。出口：位级一致 + Observation ≥60Hz。
-- **Week 3**：两个 ONNX 感知模型适配器 + ID 关联 + 所有权裁决 + 首批指标；故意坏掉的模型必须能被指标抓出。
-- **Week 4**：完整 benchmark（per-stage p50/p95、端到端帧率、适配器不变式测试）+ regression 报告 + Gate 1 判定 + 工程笔记草稿（敲门砖工件第一件）。
+- **Week 2–4（已完成，一次通过）**：`src/world_state` + 确定性真值世界 + 离屏光栅 + 位级确定性测试 + 双感知适配器 + 裁决 + 指标 + **Gate 1 三判据全 PASS**（1106.7 Hz / 适配器零核心改动 / ECE 判别分离 0.9617）→ [`benchmarks/regression/2026-09-28-grounding-loop-v0.md`](benchmarks/regression/2026-09-28-grounding-loop-v0.md)。
+- **Phase 1（已完成）**：回放录制 + replay/linear/zero/mlp/damped_linear 五模型经同一契约入闭环，divergence 五级分离；第五模型以**单个新文件**接入（核心零改动实证）→ [`benchmarks/regression/2026-09-28-phase1-world-models.md`](benchmarks/regression/2026-09-28-phase1-world-models.md)。
+- **下一步 = Phase 2**（第 4–6 月项，见 §6）：3+ 第三方可评测对象、WorldMark/WBench 动作词汇对齐、公开 v0.1 发布 + 首个 OSS PR。
 
 ## 九、操作规则
 
