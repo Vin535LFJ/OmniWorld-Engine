@@ -57,6 +57,7 @@ add_library(ow_core OBJECT
   src/models/replay_model.cpp
   src/models/linear_model.cpp
   src/models/zero_model.cpp
+  src/models/damped_linear.cpp
   src/models/mlp.cpp
   src/models/mlp_model.cpp)
 
