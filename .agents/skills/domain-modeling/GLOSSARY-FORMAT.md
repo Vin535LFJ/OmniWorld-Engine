@@ -1,6 +1,6 @@
-# GLOSSARY.md Format
+# GLOSSARY.md 格式
 
-## Structure
+## 结构
 
 ```md
 # {Context Name}
@@ -22,39 +22,39 @@ A person or organization that places orders.
 _Avoid_: Client, buyer, account
 ```
 
-## Rules
+## 规则
 
-- **Be opinionated.** When multiple words exist for the same concept, pick the best one and list the others under `_Avoid_`.
-- **Keep definitions tight.** One or two sentences max. Define what it IS, not what it does.
-- **Only include terms specific to this project's context.** General programming concepts (timeouts, error types, utility patterns) don't belong even if the project uses them extensively. Before adding a term, ask: is this a concept unique to this context, or a general programming concept? Only the former belongs.
-- **Group terms under subheadings** when natural clusters emerge. If all terms belong to a single cohesive area, a flat list is fine.
+- **Be opinionated.** 当多个词指向同一概念时，选出最好的那个，并把其他词列在 `_Avoid_` 下。
+- **Keep definitions tight.** 最多一两句话。定义它是什么，而不是它做什么。
+- **Only include terms specific to this project's context.** 一般编程概念（timeouts、error types、utility patterns）不属于这里，即使项目大量使用它们。添加 term 前先问：这是该 context 独有的概念，还是通用编程概念？只有前者属于这里。
+- **Group terms under subheadings** when natural clusters emerge. 如果所有 terms 都属于一个 cohesive area，平铺列表也可以。
 
-## Single vs multi-context repos
+## 单 context 与多 context repos
 
-**Single context (most repos):** One `GLOSSARY.md` at the repo root.
+**Single context（多数 repos）：** root 下一个 `GLOSSARY.md`。
 
-**Multiple contexts:** A `GLOSSARY-MAP.md` at the repo root lists the contexts, where they live, and how they relate to each other:
+**Multiple contexts：** root 下一个 `GLOSSARY-MAP.md`，列出 contexts、它们的位置和彼此关系：
 
 ```md
 # Glossary Map
 
 ## Contexts
 
-- [Ordering](./src/ordering/GLOSSARY.md): receives and tracks customer orders
-- [Billing](./src/billing/GLOSSARY.md): generates invoices and processes payments
-- [Fulfillment](./src/fulfillment/GLOSSARY.md): manages warehouse picking and shipping
+- [Ordering](./src/ordering/GLOSSARY.md) - receives and tracks customer orders
+- [Billing](./src/billing/GLOSSARY.md) - generates invoices and processes payments
+- [Fulfillment](./src/fulfillment/GLOSSARY.md) - manages warehouse picking and shipping
 
 ## Relationships
 
-- **Ordering → Fulfillment**: Ordering emits `OrderPlaced` events; Fulfillment consumes them to start picking
-- **Fulfillment → Billing**: Fulfillment emits `ShipmentDispatched` events; Billing consumes them to generate invoices
-- **Ordering ↔ Billing**: Shared types for `CustomerId` and `Money`
+- **Ordering -> Fulfillment**: Ordering emits `OrderPlaced` events; Fulfillment consumes them to start picking
+- **Fulfillment -> Billing**: Fulfillment emits `ShipmentDispatched` events; Billing consumes them to generate invoices
+- **Ordering -> Billing**: Shared types for `CustomerId` and `Money`
 ```
 
-The skill infers which structure applies:
+Skill 会推断应使用哪种结构：
 
-- If `GLOSSARY-MAP.md` exists, read it to find contexts
-- If only a root `GLOSSARY.md` exists, single context
-- If neither exists, create a root `GLOSSARY.md` lazily when the first term is resolved
+- 如果存在 `GLOSSARY-MAP.md`，读取它来找到 contexts
+- 如果只有 root `GLOSSARY.md`，按 single context 处理
+- 如果两者都没有，当第一个 term 被解决时懒创建 root `GLOSSARY.md`
 
-When multiple contexts exist, infer which one the current topic relates to. If unclear, ask.
+存在多个 contexts 时，推断当前主题属于哪一个。如果不清楚，就询问。

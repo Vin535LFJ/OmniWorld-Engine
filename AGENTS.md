@@ -43,7 +43,7 @@ build\omniworld_loop.exe --mode phase1   # 世界模型 divergence 评测
 
 Single-context 布局：仓库根 `GLOSSARY.md` + `docs/adr/`。详见 `docs/agents/domain.md`。
 
-### 技能使用映射（技能文件位于 `.agents/skills/`，来自英文原版 mattpocock/skills main——散文为英文，技能名与调用方式不变；可复现安装：`npx -y skills@latest add mattpocock/skills -s setup-matt-pocock-skills grill-with-docs domain-modeling to-spec to-tickets implement tdd diagnosing-bugs code-review retro handoff -a codex --copy -y`）
+### 技能使用映射（技能文件位于 `.agents/skills/`，**37 个全量**，来自 owner 定制仓库 `Vin535LFJ/mattpocock-skills-zh-CN-custom`（中文版全量 + 4 处上游回填）；可复现安装：`npx -y skills@1.7.1 add Vin535LFJ/mattpocock-skills-zh-CN-custom -s '*' -a codex --copy -y`。⚠️ **必须锁定 `skills@1.7.1`**——`skills@1.7.2` 依赖 Node≥22 的 `fs/promises.glob`，本机 Node 20.19 会直接崩溃）
 
 | 阶段 | 技能 |
 |---|---|

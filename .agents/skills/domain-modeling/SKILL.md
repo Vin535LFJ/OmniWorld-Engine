@@ -1,74 +1,74 @@
 ---
 name: domain-modeling
-description: Build and sharpen a project's domain model. Use when discussing codebase terminology, writing or editing a GLOSSARY.md, or recording or editing an ADR.
+description: 构建并打磨项目的领域模型。适用于讨论 codebase 术语、编写或编辑 GLOSSARY.md，或记录或编辑 ADR。
 ---
 
-# Domain Modeling
+# 领域建模
 
-Actively build and sharpen the project's domain model as you design. This is the *active* discipline: challenging terms, inventing edge-case scenarios, and writing the glossary and decisions down the moment they crystallise. (Merely *reading* `GLOSSARY.md` for vocabulary is not this skill: that's a one-line habit any skill can do. This skill is for when you're changing the model, not just consuming it.)
+在设计过程中主动构建并打磨项目的 domain model。这是 *active* discipline：挑战术语、发明 edge-case scenarios，并在概念成形的当下写入 glossary 和 decisions。
 
-## File structure
+## 文件结构
 
-Most repos have a single context:
+多数 repos 只有一个 context：
 
-```
+```text
 /
-├── GLOSSARY.md
-├── docs/
-│   └── adr/
-│       ├── 0001-event-sourced-orders.md
-│       └── 0002-postgres-for-write-model.md
-└── src/
+|- GLOSSARY.md
+|- docs/
+|  `- adr/
+|     |- 0001-event-sourced-orders.md
+|     `- 0002-postgres-for-write-model.md
+`- src/
 ```
 
-If a `GLOSSARY-MAP.md` exists at the root, the repo has multiple contexts. The map points to where each one lives:
+如果 root 有 `GLOSSARY-MAP.md`，说明 repo 有多个 contexts。map 指向每个 context 的位置：
 
-```
+```text
 /
-├── GLOSSARY-MAP.md
-├── docs/
-│   └── adr/                          ← system-wide decisions
-├── src/
-│   ├── ordering/
-│   │   ├── GLOSSARY.md
-│   │   └── docs/adr/                 ← context-specific decisions
-│   └── billing/
-│       ├── GLOSSARY.md
-│       └── docs/adr/
+|- GLOSSARY-MAP.md
+|- docs/
+|  `- adr/                          -> system-wide decisions
+`- src/
+   |- ordering/
+   |  |- GLOSSARY.md
+   |  `- docs/adr/                  -> context-specific decisions
+   `- billing/
+      |- GLOSSARY.md
+      `- docs/adr/
 ```
 
-Create files lazily: only when you have something to write. If no `GLOSSARY.md` exists, create one when the first term is resolved. If no `docs/adr/` exists, create it when the first ADR is needed.
+按需懒创建文件：只有在有内容要写时才创建。如果没有 `GLOSSARY.md`，当第一个 term 被解决时创建它。如果没有 `docs/adr/`，当第一个 ADR 需要出现时创建它。
 
-## During the session
+## Session 期间
 
-### Challenge against the glossary
+### 对照术语表质询
 
-When the user uses a term that conflicts with the existing language in `GLOSSARY.md`, call it out immediately. "Your glossary defines 'cancellation' as X, but you seem to mean Y. Which is it?"
+当用户使用的术语与 `GLOSSARY.md` 中既有语言冲突时，立即指出。"Your glossary defines 'cancellation' as X, but you seem to mean Y - which is it?"
 
-### Sharpen fuzzy language
+### 打磨模糊用语
 
-When the user uses vague or overloaded terms, propose a precise canonical term. "You're saying 'account': do you mean the Customer or the User? Those are different things."
+当用户使用模糊或过载术语时，提出一个精确的 canonical term。"You're saying 'account' - do you mean the Customer or the User? Those are different things."
 
-### Discuss concrete scenarios
+### 讨论具体场景
 
-When domain relationships are being discussed, stress-test them with specific scenarios. Invent scenarios that probe edge cases and force the user to be precise about the boundaries between concepts.
+讨论 domain relationships 时，用具体场景做压力测试。发明能探测 edge cases 的场景，迫使用户精确定义概念之间的 boundaries。
 
-### Cross-reference with code
+### 与代码交叉对照
 
-When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible. Which is right?"
+当用户描述某事如何工作时，检查代码是否同意。如果发现矛盾，要指出："Your code cancels entire Orders, but you just said partial cancellation is possible - which is right?"
 
-### Update GLOSSARY.md inline
+### 就地更新 GLOSSARY.md
 
-When a term is resolved, update `GLOSSARY.md` right there. Don't batch these up: capture them as they happen. Use the format in [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
+当一个 term 被解决时，立刻更新 `GLOSSARY.md`。不要批量攒到最后；随着概念出现就捕获。使用 [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md) 中的格式。
 
-`GLOSSARY.md` should be totally devoid of implementation details. Do not treat `GLOSSARY.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
+`GLOSSARY.md` 必须完全不包含 implementation details。不要把 `GLOSSARY.md` 当 spec、scratch pad 或 implementation decisions 的仓库。它只是一份 glossary。
 
-### Offer ADRs sparingly
+### 谨慎提议 ADR
 
-Only offer to create an ADR when all three are true:
+只有以下三项都成立时，才提出创建 ADR：
 
-1. **Hard to reverse**: the cost of changing your mind later is meaningful
-2. **Surprising without context**: a future reader will wonder "why did they do it this way?"
-3. **The result of a real trade-off**: there were genuine alternatives and you picked one for specific reasons
+1. **Hard to reverse** - 之后改变主意的成本有意义
+2. **Surprising without context** - 未来读者会疑惑 "why did they do it this way?"
+3. **The result of a real trade-off** - 确实存在替代方案，而你基于具体理由选择了其中一个
 
-If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](./ADR-FORMAT.md).
+缺少任一项就跳过 ADR。使用 [ADR-FORMAT.md](./ADR-FORMAT.md) 中的格式。
