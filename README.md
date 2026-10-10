@@ -2,36 +2,41 @@
 
 [中文说明 / Chinese README](README.zh-CN.md)
 
-**OmniWorld 是一个开放运行时：让感知模型、世界模型、仿真器、渲染器、智能体共享同一个可测量的"活世界状态"。** 第一站是交互式世界模型的闭环评测 harness——那是十几个学术评测团队正在重复手写的东西。
+**OmniWorld is a GPU-native world engine (C++20): moving video decode, AI inference, observation rendering, and world-state updates through GPU systems with the least practical copies, synchronization, and latency.** Perception models, world models, simulators, renderers, and agents all share one measurable "living world state" (identity / time / ownership / confidence contract). The evaluation harness is the engine's first application (ADR-0008).
 
-## 文档只有三份
+## Documentation
 
-| 文件 | 作用 |
+Three core documents + a support layer:
+
+| File | Role |
 |---|---|
-| [`PLAN.md`](PLAN.md) | **唯一必读**：是什么/为什么/路线图与 Gate/World Contract v0/组件选型/许可红线 |
-| [`CURRENT.md`](CURRENT.md) | 本周唯一焦点（现在 = Week 2：`src/world_state` + 确定性真值世界） |
-| `docs/17-research/` | 证据层：方向决策报告（2026-09-21）、GitHub 复用地图（2026-09-24）、研究队列 |
+| [`PLAN.md`](PLAN.md) | **The one must-read**: identity / goal function / milestone roadmap & Gate system / World Contract / licensing red lines |
+| [`CURRENT.md`](CURRENT.md) | The single current focus + exit criteria (now = Phase 2 "AI in the loop") |
+| [`GLOSSARY.md`](GLOSSARY.md), `docs/adr/`, `docs/17-research/`, `docs/agents/` | Support layer: glossary, decision records, evidence, conventions |
 
-其余历史文档（旧规划、治理、导读系列、两份研究报告）全部在 `docs/99-archive/`，只查不读。
+Historical documents live in `docs/99-archive/` — reference only, do not read through.
 
-## 当前状态
+## Current state
 
-- 方向已定案（2026-09-21，评测优先的 grounding-loop runtime），规划阶段关闭。
-- 已有代码：`src/runtime_probe`（C++20 硬件探针，2026-09-18 baseline）。
-- 下一步：**Week 2 —— `src/world_state` 与确定性真值世界**（见 [`CURRENT.md`](CURRENT.md)）。
+- Phase 0 + Phase 1 complete (2026-09-28): Gate 1 passed all three criteria — closed loop at 1106.7 Hz, second-model integration with zero core changes, ECE discriminability separation 0.9617; five world models ran through one contract with five-level divergence separation.
+- Direction reopened and finalized 2026-10-10 (ADR-0008: GPU-native world engine as the identity).
+- Next: **Phase 2 "AI in the loop" — swapping in real models via ONNX Runtime** (see [`CURRENT.md`](CURRENT.md)).
 
-## 构建与运行
+## Build & run
 
 ```bash
-cmake -B build -G Ninja && cmake --build build
-./build/runtime_probe            # CPU/CUDA/Vulkan 能力探针
-./build/runtime_probe --json     # 机器可读输出
-ctest --test-dir build           # 冒烟测试
+build.bat --test                # Windows: the only reliable entry (configure + build + ctest)
+build\omniworld_loop.exe        # Grounding Loop v0 + Gate 1 (reference mode, byte-exact)
+build\omniworld_loop.exe --mode phase1   # world-model divergence evaluation
 ```
 
-要求：C++20 编译器、CMake + Ninja；CUDA 与 Vulkan loader 自动检测（可选）。
+Requirements: MSVC + CMake (`build.bat` configures the environment). Reference mode is dependency-free and byte-reproducible for the same seed; performance mode is tolerance-reproducible (ADR-0009).
 
-## 规则
+## Rules
 
-- 事实与主张分离：每个技术论断必须可追溯到仓库证据或外部原始来源。
-- 代码未跑通前不加新文档；新想法进研究队列，不进 sprint。
+- Facts vs claims: every technical assertion must trace to repository evidence or external primary sources; no performance claims without benchmark data.
+- No new documents before code runs; new ideas go to the research queue, never into a sprint; direction/contract-level decisions land as ADRs.
+
+## Language
+
+`PLAN.md` / `CURRENT.md` are Chinese-first (terms keep their English originals); research notes are in Chinese.

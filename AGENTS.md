@@ -1,10 +1,10 @@
 # OmniWorld Engine — Agent 指引
 
-**这是一个评测优先的 grounding-loop runtime**：让感知模型、世界模型、仿真器、渲染器、智能体共享一个可测量的活世界状态（World Contract：identity / time / ownership / confidence）。当前阶段与全部事实以 **[PLAN.md](PLAN.md)** 为唯一必读来源；本周做什么看 **[CURRENT.md](CURRENT.md)**。
+**这是一个 GPU 原生世界引擎，评测是第一个应用**（ADR-0008）：让世界数据以最少拷贝/同步/延迟穿过 GPU 系统；感知模型、世界模型、仿真器、渲染器、智能体共享一个可测量的活世界状态（World Contract：identity / time / ownership / confidence）。当前阶段与全部事实以 **[PLAN.md](PLAN.md)** 为唯一必读来源；本周做什么看 **[CURRENT.md](CURRENT.md)**。
 
 ## 项目事实（开工前先读）
 
-1. [PLAN.md](PLAN.md) — 定位/路线图/三个 Gate/World Contract v0.1/组件选型/操作规则。
+1. [PLAN.md](PLAN.md) — 定位/目标函数/里程碑路线图与 Gate 体系/World Contract v0.1/组件选型/操作规则。
 2. [CURRENT.md](CURRENT.md) — 本周唯一焦点与出口条件。
 3. [GLOSSARY.md](GLOSSARY.md) — 领域术语（讨论与命名必须使用其中词汇，见 `docs/agents/domain.md`）。
 4. [docs/adr/](docs/adr/) — 架构决策记录（含既有决策索引）。
@@ -18,7 +18,7 @@ build\omniworld_loop.exe        # Grounding Loop v0 + Gate 1
 build\omniworld_loop.exe --mode phase1   # 世界模型 divergence 评测
 ```
 
-零外部依赖、位级确定性：同 seed 必须逐字节复现。没有 benchmark 数据不宣称性能。
+零外部依赖、参考模式位级确定性：同 seed 必须逐字节复现（性能模式按 ADR-0009 容差复现，数字必须标注模式与环境元数据）。没有 benchmark 数据不宣称性能。
 
 ## 工作流约束（硬规则）
 

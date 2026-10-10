@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Architecture review — OmniWorld-Engine</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+</script>
+<style>
+  .seam { stroke-dasharray: 4 4; }
+  .deepbox { background: linear-gradient(135deg, #0f172a, #1e293b); }
+</style>
+</head>
+<body class="bg-stone-50 text-slate-900 font-sans">
+<main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+
+<header class="space-y-3">
+  <h1 class="font-serif text-3xl">Architecture review — OmniWorld-Engine</h1>
+  <p class="text-sm text-slate-500">2026-10-09 · 3,658 行（src+apps+tests）· 依据 codebase-design 词汇（module / interface / seam / deep / shallow / leverage / locality）与 GLOSSARY.md 领域术语</p>
+  <div class="flex gap-6 text-xs text-slate-600 items-center flex-wrap">
+    <span class="inline-flex items-center gap-1"><span class="inline-block w-4 h-3 border-2 border-slate-700 bg-white"></span> module</span>
+    <span class="inline-flex items-center gap-1"><svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#475569" stroke-width="2" class="seam"/></svg> seam</span>
+    <span class="inline-flex items-center gap-1"><svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="#dc2626" stroke-width="2"/></svg> 泄漏 (leakage)</span>
+    <span class="inline-flex items-center gap-1"><span class="inline-block w-4 h-3 deepbox rounded-sm"></span> deep module</span>
+  </div>
+  <p class="text-xs text-slate-400">范围裁定：性能"优化"刻意缺席——闭环 1106.7 Hz，为 Gate 1 判据的 36.9 倍；本轮全部候选针对 depth / 可测性 / AI 可导航性。所有候选不触碰 World Contract v0.1 已冻结语义（PLAN.md §7）。</p>
+</header>
+
+<section id="candidates" class="space-y-10">
+
+<!-- ============ 1 ============ -->
+<article id="c1" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+  <h2 class="font-serif text-xl">1 · Adjudication 裁决结果应携带它裁决的内容</h2>
+  <div class="flex gap-2 text-xs">
+    <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium">Strong</span>
+    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-500">src/grounding_loop/loop.cpp:74,99 · src/world_state/world_state.cpp (adjudicate)</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — 泄漏</p>
+      <pre class="mermaid">
+flowchart LR
+  L[loop driver] --"belief_log().size() - n + i"--> B[(belief log 内部布局)]
+  L -.red.-> W[WorldState]
+  style B fill:#fee2e2,stroke:#dc2626
+  linkStyle 0 stroke:#dc2626,stroke-width:2px
+      </pre>
+      <p class="text-xs text-slate-500 mt-2">loop driver 用尾部算术从 belief log 反推每个 Proposal 的 position/confidence —— 它知道另一个 module 的私有布局。</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — seam 收紧</p>
+      <div class="flex flex-col items-center gap-2 py-4">
+        <div class="border-2 border-slate-700 rounded px-6 py-2 text-xs uppercase tracking-wider bg-white">loop driver</div>
+        <svg width="12" height="20"><line x1="6" y1="0" x2="6" y2="20" stroke="#475569" stroke-width="2"/></svg>
+        <div class="deepbox text-white rounded px-8 py-3 text-xs uppercase tracking-wider">vector<(Proposal, Adjudication)></div>
+        <p class="text-xs text-slate-500 mt-1">裁决结果自带载荷，tail-arith 消失</p>
+      </div>
+    </div>
+  </div>
+  <p class="text-sm"><span class="font-medium">Problem</span> — Adjudication 的 seam 泄漏：调用方必须复现 belief log 的内部排列才能拿回自己刚提交的数据。</p>
+  <p class="text-sm"><span class="font-medium">Solution</span> — adjudicate 返回 (Proposal, Adjudication) 配对；接口变诚实，loop 不再触碰 WorldState 内部。</p>
+  <ul class="text-sm list-disc list-inside text-slate-600 space-y-0.5">
+    <li>locality：整类 off-by-one 集中消失</li>
+    <li>interface 收窄，实现吸收布局知识</li>
+    <li>为候选 2（Metrics module）直接铺路</li>
+  </ul>
+</article>
+
+<!-- ============ 2 ============ -->
+<article id="c2" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+  <h2 class="font-serif text-xl">2 · 把 coherence metrics 抽成 deep module</h2>
+  <div class="flex gap-2 text-xs">
+    <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium">Strong</span>
+    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-500">src/grounding_loop/loop.cpp:82-107（内联评分块 ~60 行）· src/grounding_loop/phase1.cpp（第二套指标）</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — 浅而散</p>
+      <div class="flex flex-col h-64 justify-center gap-1">
+        <div class="h-8 border-l-4 border-slate-400 bg-stone-100 px-3 text-xs flex items-center">loop driver：tick 编排</div>
+        <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 text-xs flex items-center">+ id-map 反查（内联）</div>
+        <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 text-xs flex items-center">+ transform error（内联）</div>
+        <div class="h-8 border-l-4 border-red-400 bg-red-50 px-3 text-xs flex items-center">+ ECE bins（内联）</div>
+        <div class="h-8 border-l-4 border-amber-400 bg-amber-50 px-3 text-xs flex items-center">phase1.cpp：divergence（另一套）</div>
+      </div>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — 一个 deep module</p>
+      <div class="flex flex-col h-64 justify-center gap-2 items-center">
+        <div class="border-2 border-slate-700 rounded px-6 py-2 text-xs uppercase tracking-wider">loop / phase1 drivers</div>
+        <svg width="12" height="18"><line x1="6" y1="0" x2="6" y2="18" stroke="#475569" stroke-width="2" class="seam"/></svg>
+        <div class="deepbox text-white rounded px-10 py-4 text-xs uppercase tracking-wider text-center">MetricsCollector<br/><span class="text-slate-400 normal-case tracking-normal">feed(Proposal, Adjudication, truth) → report()</span></div>
+        <p class="text-xs text-slate-500">全部 Regression Report 指标一个 seam 产生</p>
+      </div>
+    </div>
+  </div>
+  <p class="text-sm"><span class="font-medium">Problem</span> — metrics 是浅的：评分逻辑寄生在两个 driver 里，两套并存、无独立测试 seam；Phase 2 新指标只能继续内联。</p>
+  <p class="text-sm"><span class="font-medium">Solution</span> — 抽 MetricsCollector，driver 只喂数据；删除它会把复杂度重新散回两个 driver（deletion test 通过）。</p>
+  <ul class="text-sm list-disc list-inside text-slate-600 space-y-0.5">
+    <li>locality：指标 bug 集中到一个 module</li>
+    <li>leverage：一个 interface，两个 driver，N 个未来指标</li>
+    <li>测试打在 seam 上，不再借道整个 loop</li>
+  </ul>
+</article>
+
+<!-- ============ 3 ============ -->
+<article id="c3" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+  <h2 class="font-serif text-xl">3 · Camera 并入 Observation（顺手修掉 224 硬编码潜伏 bug）</h2>
+  <div class="flex gap-2 text-xs">
+    <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium">Strong</span>
+    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-500">src/observation/raster.cpp:8,12（224.0f 硬编码，忽略 img.width）· src/perception/adapter.hpp（detect(img, cam, tick) 三参数）</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — 三个"相机"</p>
+      <pre class="mermaid">
+flowchart LR
+  A[Adapter] --img--> I[(Image)]
+  A --cam--> C[(TopDownCamera)]
+  A --tick--> T[(tick)]
+  C -.red.-> R[raster.cpp: 硬编码 224]
+  style R fill:#fee2e2,stroke:#dc2626
+  linkStyle 3 stroke:#dc2626,stroke-width:2px
+      </pre>
+      <p class="text-xs text-slate-500 mt-2">cam 是参数，却行为恒定；真值却在 raster 里另算（224 ≠ img.width 时检测器反投影全错）。</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — Observation 即视图</p>
+      <div class="flex flex-col items-center gap-2 py-4">
+        <div class="border-2 border-slate-700 rounded px-6 py-2 text-xs uppercase tracking-wider">perception adapters</div>
+        <svg width="12" height="18"><line x1="6" y1="0" x2="6" y2="18" stroke="#475569" stroke-width="2" class="seam"/></svg>
+        <div class="deepbox text-white rounded px-8 py-4 text-xs uppercase tracking-wider text-center">Observation<br/><span class="text-slate-400 normal-case tracking-normal">rgb + view(dim-aware) + tick + 元数据</span></div>
+        <p class="text-xs text-slate-500 mt-1">与契约 §7 的 view_transform 字段对齐；潜伏 bug 随接口一起消失</p>
+      </div>
+    </div>
+  </div>
+  <p class="text-sm"><span class="font-medium">Problem</span> — Image 与 cam 的 seam 撕裂：换分辨率（Phase 2 完全可能）时反投影静默出错。</p>
+  <p class="text-sm"><span class="font-medium">Solution</span> — Observation 自带维度感知的视图；adapter 的 interface 从三参数收为一参数。</p>
+  <ul class="text-sm list-disc list-inside text-slate-600 space-y-0.5">
+    <li>leverage：所有 adapter 一次收口</li>
+    <li>删掉一个"全局常量伪装成参数"</li>
+    <li>契约对齐，非契约变更</li>
+  </ul>
+</article>
+
+<!-- ============ 4 ============ -->
+<article id="c4" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+  <h2 class="font-serif text-xl">4 · 世界模型骨架藏进 header seam（保持单文件不变式）</h2>
+  <div class="flex gap-2 text-xs">
+    <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-medium">Worth exploring</span>
+    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-500">src/models/{replay,linear_model,zero_model,damped_linear,mlp_model}.cpp — 5 处逐实体循环骨架</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — 骨架 ×5</p>
+      <div class="flex gap-2 justify-center py-4 flex-wrap">
+        <div class="border border-red-300 bg-red-50 rounded p-2 text-xs">for entities →<br/>build Proposal → push</div>
+        <div class="border border-red-300 bg-red-50 rounded p-2 text-xs">同左</div>
+        <div class="border border-red-300 bg-red-50 rounded p-2 text-xs">同左</div>
+        <div class="border border-red-300 bg-red-50 rounded p-2 text-xs">同左</div>
+        <div class="border border-red-300 bg-red-50 rounded p-2 text-xs">同左</div>
+      </div>
+      <p class="text-xs text-slate-500">变化的只是 pos 计算（~5 行）；骨架（~15 行）×5。</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — 骨架一份，模型只写增量</p>
+      <div class="flex flex-col items-center gap-2 py-4">
+        <div class="deepbox text-white rounded px-6 py-2 text-xs uppercase tracking-wider">predict_skeleton.h（head 侧）</div>
+        <svg width="12" height="16"><line x1="6" y1="0" x2="6" y2="16" stroke="#475569" stroke-width="2" class="seam"/></svg>
+        <div class="flex gap-2">
+          <span class="border rounded px-2 py-1 text-xs">linear.cpp</span>
+          <span class="border rounded px-2 py-1 text-xs">zero.cpp</span>
+          <span class="border rounded px-2 py-1 text-xs">damped.cpp</span>
+          <span class="border rounded px-2 py-1 text-xs">mlp.cpp</span>
+          <span class="border rounded px-2 py-1 text-xs">replay.cpp</span>
+        </div>
+        <p class="text-xs text-slate-500">每个模型仍是"一个 .cpp 自注册"——Gate 1b 不变式完整保留</p>
+      </div>
+    </div>
+  </div>
+  <p class="text-sm"><span class="font-medium">Problem</span> — 骨架是重复的，但单文件 Adapter 标准压制了它的修复（Gate 1b 证据链依赖"一模型一文件"）。</p>
+  <p class="text-sm"><span class="font-medium">Solution</span> — 共享 header 承载循环骨架；各模型文件仍在、仍自注册，只是变薄。骨架 bug 修一次即五处生效。</p>
+  <div class="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">标准注记：不违反"一模型一文件 + 零核心分支"标准——标准约束的是注册与核心，不禁止共享 header。</div>
+</article>
+
+<!-- ============ 5 ============ -->
+<article id="c5" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 shadow-sm">
+  <h2 class="font-serif text-xl">5 · 两个 loop driver 合并成一个"驱动世界"的 seam</h2>
+  <div class="flex gap-2 text-xs">
+    <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-medium">Worth exploring</span>
+    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-500">src/grounding_loop/loop.cpp（Phase 0 driver）· src/grounding_loop/phase1.cpp（Phase 1 driver）——两者都"推进 Truth World + 计时 + 采 Proposal + 评分"</p>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — 分叉的驱动器</p>
+      <pre class="mermaid">
+flowchart TD
+  sub0[phase0 driver] --> W1[TruthWorld step]
+  sub1[phase1 driver] --> W2[TruthWorld step]
+  sub0 --> T1[计时/摘要]
+  sub1 --> T2[计时/摘要]
+      </pre>
+      <p class="text-xs text-slate-500 mt-2">Phase 2 再来就要抄第三份；Gate 证据的生成方式开始漂移。</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — 一份驱动，可插参与者</p>
+      <pre class="mermaid">
+flowchart TD
+  D[driver：step→observe→collect→score] --> P0[perception 参与者]
+  D --> P1[world-model 参与者]
+  D --> P2[Phase 2 参与者…]
+      </pre>
+    </div>
+  </div>
+  <p class="text-sm"><span class="font-medium">Problem</span> — 驱动 Grounding Loop 的知识分散两处；新增评测维度 = 复制驱动器。</p>
+  <p class="text-sm"><span class="font-medium">Solution</span> — 一个 driver、参与者列表插拔；两 phase 成为两个配置。收益依赖候选 1/2 先行（评分与计时已收口后合并才干净）。</p>
+  <ul class="text-sm list-disc list-inside text-slate-600 space-y-0.5">
+    <li>leverage：一个 driver，N 个 phase</li>
+    <li>Gate 报告生成路径唯一</li>
+  </ul>
+</article>
+
+<!-- speculative -->
+<article class="rounded-xl border border-dashed border-slate-300 bg-white/60 p-6 space-y-2">
+  <h2 class="font-serif text-lg text-slate-500">6 · 也考虑过（Speculative，暂不动）</h2>
+  <ul class="text-sm text-slate-500 list-disc list-inside space-y-1">
+    <li><b>统一报告 emitter</b> — 三处 JSON/text 构建（runtime_probe/report.cpp、phase0、phase1 各一套）当前痛点低；MetricsCollector（候选 2）落地后自然收口。</li>
+    <li><b>MLP 样本构建去重</b> — mlp_model.cpp:37 与 tests/ow_tests.cpp:188 重复构建训练样本；可提为 rollout.hpp 上的一个纯函数（in-process seam），但等候选 1/2 后顺手做。</li>
+  </ul>
+</article>
+
+</section>
+
+<!-- top recommendation -->
+<section id="top-recommendation" class="rounded-xl deepbox text-white p-8 space-y-3">
+  <p class="text-xs uppercase tracking-wider text-slate-400">Top recommendation</p>
+  <h2 class="font-serif text-2xl"><a href="#c1" class="underline decoration-emerald-400">候选 1 + 2 一起做</a>（Adjudication 载荷 + MetricsCollector）</h2>
+  <p class="text-sm text-slate-300">理由：互相解锁——裁决结果自带载荷后，MetricsCollector 的 feed 接口立即成立；两者都是 Strong、风险最低、且直接为 Phase 2（ONNX 换装、新指标、公开 v0.1）铺路。做完后候选 5 的驱动器合并才干净，候选 3 可随 Phase 2 首个分辨率变更顺带完成。</p>
+  <p class="text-xs text-slate-400">验收方式沿用仓库纪律：重构后 ctest 5/5 必须保持、Gate 1 与 Phase 1 两份 regression 的全部数字必须逐位复现（同 seed 位级确定性是重构不可破坏的硬约束）。</p>
+</section>
+
+<footer class="text-xs text-slate-400 space-y-1 border-t border-slate-200 pt-4">
+  <p>方法说明（诚实声明）：探索由作者代理完成——100% 代码为近两日在本会话内写成，且两天前已有一轮 Standards 轴 code-review 留存发现；本次以行号级 grep 取证复核（loop.cpp:74/99、raster.cpp:8/12、5×骨架、2×样本构建）。技能流程中的 fresh-eyes 子代理步骤据此跳过，属对 skill 的已声明偏离。</p>
+  <p>不裁决已冻结事项：World Contract v0.1（PLAN.md §7）与方向决策（ADR-0007）不在本报告重审范围。</p>
+</footer>
+
+</main>
+</body>
+</html>

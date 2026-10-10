@@ -2,36 +2,38 @@
 
 [English README](README.md)
 
-**OmniWorld 是一个开放运行时：让感知模型、世界模型、仿真器、渲染器、智能体共享同一个可测量的"活世界状态"**（实体身份 / 时间 / 所有权 / 置信度契约）。第一站是交互式世界模型的闭环评测 harness——十几个学术评测团队正在重复手写的那套东西。
+**OmniWorld 是一个 GPU 原生世界引擎（C++20）：让世界数据——视频解码、AI 推理、观测渲染、世界状态更新——以最少实际拷贝、最少同步、最低延迟穿过 GPU 系统。** 感知模型、世界模型、仿真器、渲染器、智能体共享同一个可测量的"活世界状态"（实体身份 / 时间 / 所有权 / 置信度契约）；评测 harness 是引擎的第一个应用（ADR-0008）。
 
-## 文档只有三份
+## 文档
+
+核心三份 + 支撑层：
 
 | 文件 | 作用 |
 |---|---|
-| [`PLAN.md`](PLAN.md) | **唯一必读**：是什么 / 为什么 / 路线图与三个 Gate / World Contract v0 / 组件选型 / 许可红线 |
-| [`CURRENT.md`](CURRENT.md) | 本周唯一焦点（现在 = Week 2：`src/world_state` + 确定性真值世界） |
-| `docs/17-research/` | 证据层：方向决策报告（2026-09-21）、GitHub 复用地图（2026-09-24）、研究队列 |
+| [`PLAN.md`](PLAN.md) | **唯一必读**：定位 / 目标函数 / 里程碑路线图与 Gate 体系 / World Contract / 许可红线 |
+| [`CURRENT.md`](CURRENT.md) | 本周唯一焦点与出口条件（现在 = Phase 2「AI 入环」） |
+| [`GLOSSARY.md`](GLOSSARY.md)、`docs/adr/`、`docs/17-research/`、`docs/agents/` | 支撑层：术语、决策记录、证据、约定 |
 
-其余历史文档（旧规划、治理、导读系列、两份研究报告）全部在 `docs/99-archive/`，只查不读。
+其余历史文档在 `docs/99-archive/`，只查不读。
 
 ## 当前状态
 
-- 方向已定案（2026-09-21，评测优先的 grounding-loop runtime），规划阶段关闭。
-- 已有代码：`src/runtime_probe`（C++20 硬件探针，2026-09-18 baseline）。
-- 下一步：**Week 2 —— `src/world_state` 与确定性真值世界**（见 [`CURRENT.md`](CURRENT.md)）。
+- Phase 0 + Phase 1 已完成（2026-09-28）：Gate 1 三判据 PASS——闭环 1106.7 Hz、第二模型接入核心零改动、ECE 判别分离 0.9617；五个世界模型经同一契约入环，divergence 五级分离。
+- 方向于 2026-10-10 重开定案（ADR-0008：GPU 原生世界引擎为本体）。
+- 下一步：**Phase 2「AI 入环」——ONNX Runtime 真模型换装**（见 [`CURRENT.md`](CURRENT.md)）。
 
 ## 构建与运行
 
 ```bash
-cmake -B build -G Ninja && cmake --build build
-./build/runtime_probe            # CPU/CUDA/Vulkan 能力探针
-./build/runtime_probe --json     # 机器可读输出
-ctest --test-dir build           # 冒烟测试
+build.bat --test                # Windows 唯一可靠入口：configure + build + ctest
+build\omniworld_loop.exe        # Grounding Loop v0 + Gate 1（参考模式，逐字节可复现）
+build\omniworld_loop.exe --mode phase1   # 世界模型 divergence 评测
 ```
 
-要求：C++20 编译器、CMake + Ninja；CUDA 与 Vulkan loader 自动检测（可选）。
+要求：MSVC + CMake（`build.bat` 自动配置）；参考模式零外部依赖、同 seed 逐字节复现；性能模式容差复现（ADR-0009）。
 
 ## 语言与规则
 
 - `PLAN.md`/`CURRENT.md` 中文优先，术语保留英文；证据层研究报告中文。
-- 代码未跑通前不加新文档；新想法进研究队列，不进 sprint。
+- 事实与主张分离：每个技术论断必须可追溯到仓库证据或外部原始来源；没有 benchmark 数据不宣称性能。
+- 代码未跑通前不加新文档；新想法进研究队列，不进 sprint；方向/契约级决策落 ADR。
