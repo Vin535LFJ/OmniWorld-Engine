@@ -2,27 +2,26 @@
 
 > 只回答一个问题：**现在做什么。** 背景与全貌见 [`PLAN.md`](PLAN.md)。
 
-**2026-10-10 方向重开定案（ADR-0008/0009）；下一步 = Phase 2「AI 入环」开工。**
+**2026-10-12 过程重开（ADR-0010）：白纸共创重建。当前 = R1a 总体设计共创（L0）。**
 
 ## 当前状态
 
-- 已完成：Phase 0 + Phase 1（2026-09-28）——Gate 1 三判据 PASS（1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617）；五世界模型 divergence 分离；契约 v0.1 冻结。
-- 代码：`src/`（world_state / truth_world / observation / perception / grounding_loop / models）+ `apps/omniworld_loop` + `tests/`，ctest 5/5 绿，零外部依赖，参考模式位级确定性。
-- 报告：`benchmarks/regression/2026-09-28-grounding-loop-v0.md`（Gate 1）+ `2026-09-28-phase1-world-models.md`（Phase 1）。
-- 复现：`build.bat --test`；`build\omniworld_loop.exe`（Gate 1）/ `--mode phase1`（divergence）。
+- 旧引擎实现已作废删除（`git tag pre-rebuild` 可查；runtime_probe 保留、可构建）。
+- 设计层 `docs/design/` 已建立：L0 总体设计 → L1 阶段概要设计 → L2 切片详细设计 + `problem-log.md`（总分结构，ADR-0010）。
+- 旧基线数字（重建对照用）：Gate 1 三判据 1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617；五模型 divergence 分离。
 
-## 下一件事 = Phase 2 · AI 入环（ONNX 换装）
+## 下一件事 = R1a：L0 总体设计共创
 
-1. **ONNX Runtime（CUDA EP）真模型适配器**：RT-DETRv2-S / Depth-Anything-V2-Small 经同一感知适配器契约接入（替换内置 CV 检测器）——第一次"真 AI 在环"，兼作适配器不变式再验证。
-2. **双模式回归框架（ADR-0009）**：参考模式逐字节 oracle 不动；性能模式容差判据 + 延迟预算报告。
-3. **折入架构候选 #3**：Camera 并入 Observation、修 224 硬编码（真模型分辨率非 224，必然踩中）。
+1. **需求重述**（从目标函数出发，不从旧实现出发）——草稿已入 [`docs/design/00-总体设计.md`](docs/design/00-总体设计.md) §1
+2. **World Contract 白纸问题树**：身份 / 时间 / 所有权 / 写路径 / 冲突 / 置信度 / 观察——逐轮问答，owner 从第一性原理解答
+3. **总体架构**（C4）+ **阶段划分表**（每阶段 目标·交付物·退出判据）
+4. 冻结后做 **v0.1 后视镜 delta 审查**（含 2026-10-09 架构评审洞见；差异处逐条理由落 ADR）
 
-## 出口条件（Phase 2 能力 Gate）
+## 出口条件（R1a）
 
-- 真模型以单文件适配器接入，核心零改动；
-- 参考模式 ctest 全绿、同 seed 位级复现保持；
-- 性能模式延迟预算实测报告（4060 8GB 环境元数据 + 模式标注），真模型 vs 内置检测器的指标对比入 regression 报告。
+- L0 经 owner 逐节审阅、批准冻结（含契约语义 + 阶段划分表）
+- 评审留痕写进文档头；此后变更走 ADR
 
 ## 不碰
 
-付费大算力训练（个人预算红线）；ROS 2/VLA/LLM、分布式、游戏 demo、编辑器、商业化；渲染升级不在关键路径（Vulkan 离屏渲染器 = 可选技能项目）；sprint 外新想法进 `docs/17-research/research-queue.md`。
+写任何引擎代码（设计先行：L2 批准才动工）；付费大算力训练；runtime_probe 不重构；旧实现不复活（后视镜只读）。

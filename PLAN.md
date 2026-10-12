@@ -79,6 +79,8 @@
 | **4 世界模型/智能体应用** | 回放→预测闭环深化；Kaggle 免费资源训小模型（dynamics/depth 玩具级）；最小 Agent 契约 | 小模型训练可复现（seed 级）；agent 在环 | 训练+评测一体示例 |
 | **（期权）评测工具产品化** | WorldMark/WBench 词汇对齐、协议公开发布 | 外部兴趣信号出现才启动 | — |
 
+**2026-10-12 过程重开（ADR-0010）**：旧实现作废，白纸共创重建——阶段 A 核心引擎重建（出口 = Gate-1 对齐报告，vs `pre-rebuild` 基线）→ 阶段 B 双模式框架 → 阶段 C AI 入环（即本表 Phase 2）。各阶段目标·交付物·退出判据的详细划分表冻结于 [`docs/design/00-总体设计.md`](docs/design/00-总体设计.md)（L0），随共创演进。
+
 **Gate 体系（2026-10-10 重塑，ADR-0008；旧生态 Gate 2/3 废止）**：
 - **能力 Gate**（技术判据，铁律）：每 Phase 出口判据如上表；不达标不进下一 Phase。
 - **作品集 Gate**（敲门砖判据）：公开工件包成型——README 对外版（clone 即跑）+ 带环境元数据的 benchmark 笔记 + 一页工程笔记。
@@ -112,7 +114,8 @@
 - **Phase 0 + 1 已完成**（2026-09-28）：Gate 1 三判据 PASS（1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617）→ [`benchmarks/regression/2026-09-28-grounding-loop-v0.md`](benchmarks/regression/2026-09-28-grounding-loop-v0.md)；五世界模型 divergence 五级分离 → [`benchmarks/regression/2026-09-28-phase1-world-models.md`](benchmarks/regression/2026-09-28-phase1-world-models.md)。
 - **2026-10-10 方向重开**（ADR-0008）：R3 融合定案；本文件旧日期层积（09-21/09-24/09-28 补录）收拢入各节正文。
 - **下一步 = Phase 2「AI 入环」**：ONNX 换装 + 双模式回归框架 + 架构候选 #3 折入，详见 [CURRENT.md](CURRENT.md)。
-- **挂起的架构候选**（2026-10-09 评审，报告 [`docs/17-research/2026-10-09-architecture-review.html`](docs/17-research/2026-10-09-architecture-review.html)）：#1 Adjudication 裁决结果携带内容、#2 coherence metrics 抽 deep module、#4 世界模型骨架 header seam、#5 两个 loop driver 合并——按需领取，不在关键路径。
+- **挂起的架构候选**（2026-10-09 评审，报告 [`docs/17-research/2026-10-09-architecture-review.html`](docs/17-research/2026-10-09-architecture-review.html)）：随旧实现一并归档，其设计洞见（如"裁决结果应携带它裁决的内容"）进入白纸重建的后视镜审查。
+- **2026-10-12 过程重开**（ADR-0010）：白纸共创重建启动——旧实现作废（tag `pre-rebuild`），R1a 总体设计共创进行中，设计层见 [`docs/design/`](docs/design/)；设计先行：L2 批准才动工。
 
 ## 九、操作规则
 
@@ -121,6 +124,7 @@
 3. 研究只解当前 phase 出口所需的问题；产 research note 带来源。
 4. **代码未跑通前不加新文档。**
 5. **方向/契约/边界级决策 → `docs/adr/` 落 ADR，禁止以"补录"形式堆进本文件**（2026-10-10 新增：PLAN 层积是上次失焦的结构性根因）。
+6. **设计先行**：任何代码切片动工前，必须有该切片经 owner 批准的详细设计（`docs/design/` L2）；每层设计以批准为冻结，变更走 ADR（2026-10-12，ADR-0010）。
 
 ## 十、证据与深度阅读（想查才查，不必读）
 
