@@ -23,7 +23,7 @@ _Avoid_: 帧时间、时间戳（指 tick 域时）
 _Avoid_: 检测结果直写、直接更新
 
 **Belief layer（信念层）**:
-被采纳的 Proposal 的记录；只被评分，永不覆盖拥有字段。
+经裁决的 Proposal 的记录（含拒绝项与裁决结果）；只被评分，永不覆盖拥有字段。
 _Avoid_: 副本状态、影子状态
 
 **Ownership（所有权）**:
@@ -31,7 +31,7 @@ _Avoid_: 副本状态、影子状态
 _Avoid_: 写权限混称
 
 **Observation（观察）**:
-某 tick 的有界视图（v0：224×224 正交俯视 RGB + 九字段内存契约元数据）。
+某 tick 的有界视图（正交俯视 RGB + 帧元数据 backend/device/format/dims；分辨率为观察属性）+ 三态可见性（看见/未见/不确定）。
 _Avoid_: 截图、渲染帧（指契约结构时）
 
 **Adjudication（裁决）**:

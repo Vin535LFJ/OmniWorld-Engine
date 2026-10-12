@@ -9,6 +9,7 @@
 | [ADR-0008](0008-direction-reopen-gpu-native-world-engine.md) | 方向重开：GPU 原生世界引擎为本体，评测降为第一应用（R3 融合） | 2026-10-10 |
 | [ADR-0009](0009-reproducibility-dual-mode.md) | 可复现性双模式：参考模式逐字节，性能模式容差 | 2026-10-10 |
 | [ADR-0010](0010-process-reopen-co-designed-rebuild.md) | 过程重开：白纸共创重建（总分三层设计文档 + 设计先行 + 技能映射） | 2026-10-12 |
+| [ADR-0011](0011-contract-rear-mirror-delta-review.md) | 契约后视镜 delta 审查：4 重合 / 3 收紧 / 5 缺口处置；L0 §2 定稿冻结 | 2026-10-12 |
 
 ## 既有决策记录索引（在别处，勿重复搬运）
 

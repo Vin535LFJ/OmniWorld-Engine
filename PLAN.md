@@ -87,27 +87,15 @@
 - **期权触发器**：外部兴趣信号（issue/引用/合作邀请）出现 → 重估评测工具产品化分支；不出现不构成失败。
 - **时间止损**：连续 3 个月无任何公开工件产出 → 缩小范围重排。
 
-## 七、World Contract v0（写代码时的唯一依据）
+## 七、World Contract（权威文本：docs/design/00-总体设计.md §2）
 
-**设计规则**：每个字段必须被 30 天代码用到，没消费者就删；只加字段不改语义；语义变更 = 新版本 + ADR。
+**契约已白纸重开共创并冻结（2026-10-12）**：9 条语义（实体属性 / 身份铸造 / tick 时间域 / 字段所有权 / Proposal 写路径 / 冲突 / 置信度 / 观察 / Tick 日志）+ 三项后视镜裁定（Action 未定预留；tick 即版本；来源由账本归属表达）。完整权威文本见 [`docs/design/00-总体设计.md`](docs/design/00-总体设计.md) §2（L0）；后视镜 delta 审查（4 重合 / 3 收紧 / 5 缺口处置）见 [ADR-0011](docs/adr/0011-contract-rear-mirror-delta-review.md)。
 
-**Entity**：`entity_id`(u64，runtime 铸造不复用)、`class_tag`(字符串)、`transform`(pos+quat，单一世界系)、`velocity`、`owner`(组件 id，唯一写入者)、`source`(`ground_truth`|`belief`)、`updated_at`(tick)。
-
-**Observation**：`tick`、`view_transform`(观察者位姿——v0 唯一允许的第二坐标系)、`sensor_kind`(`rgb`)、帧 buffer 元数据（backend/device/format/dims/pitch/lifetime/sync/timestamp，九字段继承自 memory 契约）。
-
-**Proposal（非拥有者的唯一写路径）**：`producer`、`tick_observed`、`target`(entity_id 或 new_entity)、`fields`(提议值)、`confidence`([0,1])。
-
-**WorldTransition（每 tick 日志）**：`tick`、`state_version`、`applied`/`rejected`(含拒绝原因)、`per_stage_latency`。
-
-**Action**：`target`、`action_type`+payload、`issued_by`、`tick`（只验证 schema 与所有权，语义在适配器层）。
-
-**六条语义**：① 身份由 runtime 铸造与裁决（v0 = 最近变换+类别匹配，可替换）；② 单一 tick 时钟域，wall-clock 仅诊断用；③ 真值独占运动学字段，模型只能写 belief 层 proposal——指标 = (truth, belief) 按 entity_id 联表；④ v0 冲突策略只有"真值赢、beliefs 留痕"；⑤ 置信度单浮点，校准问题体现为指标而非静默覆盖；⑥ 部分观测带显式视锥元数据，未见 ≠ 空。
-
-**明确不进 v0**：多坐标系树、分布式状态、概率分布字段、语义层级/关系、生成式表示共存、OpenUSD 导出、显示渲染（v0 离屏）。
-
-**v0.1 冻结（2026-09-28，依 Phase 0/1 实测）**：语义零改动；补充 as-built 事实——① 第二类参与者"世界模型适配器"（`predict(t, entities) → proposals`，`target_hint` 作为指标侧证据）；② 回放格式 rollout.txt（tab 分隔 tick/id/class/x/z/vx/vz）；③ 评测中世界模型 confidence 固定 0.5，逐模型置信度估计为 v0.2 工作；④ belief 层只记录不改动拥有字段（已由测试守护）。证据：两份 regression 报告。
+**继承的设计规则（不变）**：每个字段必须有真实消费者，没消费者就删；只加字段不改语义；语义变更 = 新 ADR。
 
 **可复现性双模式（2026-10-10，[ADR-0009](docs/adr/0009-reproducibility-dual-mode.md)）**：参考模式（纯 CPU）逐字节复现，是契约回归的唯一 oracle；性能模式（GPU）容差复现 + 延迟预算，不承诺逐字节。字段语义零改动；性能模式数字必须标注模式开关与环境元数据。
+
+**历史**：v0.1 契约原文（2026-09-28 冻结）仅存 git 历史（`pre-rebuild` 及更早的 PLAN.md）。
 
 ## 八、执行状态（快照 2026-10-10）
 
