@@ -2,26 +2,28 @@
 
 > 只回答一个问题：**现在做什么。** 背景与全貌见 [`PLAN.md`](PLAN.md)。
 
-**2026-10-12 过程重开（ADR-0010）：白纸共创重建。当前 = R1a 总体设计共创（L0）。**
+**阶段 A 实施期：切片 01「真值心跳」待领取。**
 
 ## 当前状态
 
-- 旧引擎实现已作废删除（`git tag pre-rebuild` 可查；runtime_probe 保留、可构建）。
-- 设计层 `docs/design/` 已建立：L0 总体设计 → L1 阶段概要设计 → L2 切片详细设计 + `problem-log.md`（总分结构，ADR-0010）。
-- 旧基线数字（重建对照用）：Gate 1 三判据 1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617；五模型 divergence 分离。
+- 规划层全部冻结：L0 总体设计（契约 + 架构 + 阶段表）、L1 阶段 A 概要设计（模块 + 签名 + 模式出处）。
+- 阶段 A spec + 6 张切片票已发布：**[`.scratch/stage-a-core/`](.scratch/stage-a-core/)**（spec.md + issues/01—06，工具无关，任何 AI 可领）。
+- 当前可构建代码：runtime_probe（引擎代码随切片逐片回归）。
+- 旧基线（重建对照）：Gate 1 三判据 1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617。
 
-## 下一件事 = R1a：L0 总体设计共创
+## 下一件事 = 领取切片 01
 
-1. **需求重述**（从目标函数出发，不从旧实现出发）——草稿已入 [`docs/design/00-总体设计.md`](docs/design/00-总体设计.md) §1
-2. **World Contract 白纸问题树**：身份 / 时间 / 所有权 / 写路径 / 冲突 / 置信度 / 观察——逐轮问答，owner 从第一性原理解答
-3. **总体架构**（C4）+ **阶段划分表**（每阶段 目标·交付物·退出判据）
-4. 冻结后做 **v0.1 后视镜 delta 审查**（含 2026-10-09 架构评审洞见；差异处逐条理由落 ADR）
+- **票据：[`.scratch/stage-a-core/issues/01-truth-heartbeat.md`](.scratch/stage-a-core/issues/01-truth-heartbeat.md)**（无阻塞，可立即开始）
+- 流程：新开一个 session，粘入这段话即可——
 
-## 出口条件（R1a）
+  > 实现 .scratch/stage-a-core/issues/01-truth-heartbeat.md——先按流程读 spec 与 docs/design/ 设计文档，产出该切片的 L2 详细设计给我批准，批准后 TDD 实现。
 
-- L0 经 owner 逐节审阅、批准冻结（含契约语义 + 阶段划分表）
-- 评审留痕写进文档头；此后变更走 ADR
+- 切片链：01 真值心跳 → 02 观察生成 → 03 感知接缝 → 04 裁决与信念账本 → 05 指标组 → 06 世界模型接缝 + Gate-1 对齐报告（06 出口 = 阶段 A 完成）。
+
+## 出口条件（阶段 A）
+
+Gate-1 对齐报告落 `benchmarks/regression/`：新实现三判据 vs `pre-rebuild` 基线并排，差异逐条解释；全量 ctest 绿 + 参考模式逐字节复现。
 
 ## 不碰
 
-写任何引擎代码（设计先行：L2 批准才动工）；付费大算力训练；runtime_probe 不重构；旧实现不复活（后视镜只读）。
+双模式框架（阶段 B）、ONNX 真模型（阶段 C）、Vulkan 渲染器（可选技能项目）、Action（契约预留）、付费大算力；**无批准的 L2 不写代码**（PLAN 规则 #6）。

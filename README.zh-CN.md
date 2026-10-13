@@ -13,8 +13,9 @@
 | ③ 1 分钟 | [`CURRENT.md`](CURRENT.md) | 现在做什么 + 出口条件 | 今天该打开哪个文件 |
 | ④ 20 分钟 | [`docs/design/00-总体设计.md`](docs/design/00-总体设计.md) | **当前权威设计（已冻结）**：World Contract 契约语义 + 总体架构 + 阶段划分 | 契约怎么定的、系统长什么样 |
 | ⑤ 按需 | [`docs/design/`](docs/design/) 各阶段目录 | 概要设计（L1）/ 切片详细设计（L2）/ [`problem-log.md`](docs/design/problem-log.md) 踩坑记录 | 某一块具体怎么设计、踩过什么坑 |
-| ⑥ 按需 | [`docs/adr/`](docs/adr/) | 每个重大决策"为什么"：0008 方向重开 / 0009 双模式 / 0010 白纸重建 / 0011 后视镜 | 决策的来龙去脉 |
-| ⑦ 按需 | [`GLOSSARY.md`](GLOSSARY.md) · [`benchmarks/regression/`](benchmarks/regression/) | 术语表 · 性能主张的唯一证据 | 概念的精确定义 / 数字出处 |
+| ⑥ 干活时 | [`.scratch/stage-a-core/`](.scratch/stage-a-core/) | **任务票据**：spec + 切片票 01—06（当前活跃 feature） | 现在干哪个任务、验收标准是什么 |
+| ⑦ 按需 | [`docs/adr/`](docs/adr/) | 每个重大决策"为什么"：0008 方向重开 / 0009 双模式 / 0010 白纸重建 / 0011 后视镜 | 决策的来龙去脉 |
+| ⑧ 按需 | [`GLOSSARY.md`](GLOSSARY.md) · [`benchmarks/regression/`](benchmarks/regression/) | 术语表 · 性能主张的唯一证据 | 概念的精确定义 / 数字出处 |
 
 ## 当前状态（2026-10-13）
 

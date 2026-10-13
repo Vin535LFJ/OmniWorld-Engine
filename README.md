@@ -13,8 +13,9 @@
 | ③ 1 min | [`CURRENT.md`](CURRENT.md) | The single current focus + exit criteria | What to open today |
 | ④ 20 min | [`docs/design/00-总体设计.md`](docs/design/00-总体设计.md) | **Current authoritative design (frozen)**: World Contract semantics + overall architecture + phase plan | How the contract was decided, what the system looks like |
 | ⑤ as needed | [`docs/design/`](docs/design/) stage folders | Stage designs (L1) / slice detailed designs (L2) / [`problem-log.md`](docs/design/problem-log.md) | How a given piece is designed, what broke |
-| ⑥ as needed | [`docs/adr/`](docs/adr/) | The "why" of every major decision: 0008 direction reopen / 0009 dual mode / 0010 blank-slate rebuild / 0011 rear-mirror | Decision history |
-| ⑦ as needed | [`GLOSSARY.md`](GLOSSARY.md) · [`benchmarks/regression/`](benchmarks/regression/) | Glossary · the only evidence for performance claims | Precise definitions / where numbers come from |
+| ⑥ when working | [`.scratch/stage-a-core/`](.scratch/stage-a-core/) | **Task tickets**: spec + slice tickets 01—06 (current active feature) | Which task is live, what its acceptance criteria are |
+| ⑦ as needed | [`docs/adr/`](docs/adr/) | The "why" of every major decision: 0008 direction reopen / 0009 dual mode / 0010 blank-slate rebuild / 0011 rear-mirror | Decision history |
+| ⑧ as needed | [`GLOSSARY.md`](GLOSSARY.md) · [`benchmarks/regression/`](benchmarks/regression/) | Glossary · the only evidence for performance claims | Precise definitions / where numbers come from |
 
 ## Current state (2026-10-13)
 
