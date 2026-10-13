@@ -44,5 +44,41 @@ else()
   message(WARNING "CUDAToolkit not found; runtime_probe reports CUDA as unavailable")
 endif()
 
+# ---------------------------------------------------------------------------
+# ow_core — engine core (stage A rebuild, slice by slice). OBJECT library:
+# self-registering adapters must not be dropped by the linker (pre-rebuild
+# lesson on MSVC).
+# ---------------------------------------------------------------------------
+add_library(ow_core OBJECT
+  src/world_state/world_state.cpp
+  src/truth_world/truth_world.cpp)
+
+target_include_directories(ow_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set_target_properties(ow_core PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(MSVC)
+  target_compile_options(ow_core PUBLIC /utf-8 /permissive- /W4)
+else()
+  target_compile_options(ow_core PUBLIC -Wall -Wextra)
+endif()
+
+# ---------------------------------------------------------------------------
+# tests
+# ---------------------------------------------------------------------------
+add_executable(ow_tests tests/ow_tests.cpp)
+target_link_libraries(ow_tests PRIVATE ow_core)
+set_target_properties(ow_tests PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(MSVC)
+  target_compile_options(ow_tests PRIVATE /utf-8 /permissive- /W4)
+else()
+  target_compile_options(ow_tests PRIVATE -Wall -Wextra)
+endif()
+
 enable_testing()
 add_test(NAME runtime_probe_smoke COMMAND runtime_probe --json)
+add_test(NAME ow_slice01 COMMAND ow_tests)
