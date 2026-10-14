@@ -7,6 +7,11 @@ out/
 *.suo
 CMakeUserPresets.json
 
-# ZCode session-local files
+# AI 工具的 session-local 目录——一律不入库。
+# 它们只做映射：权威内容在 docs/agents/（工作流文档）+ AGENTS.md，工具目录仅作本地引用/记忆。
 .zcode/
 .zcodeignore
+.workbuddy-ai/
+.claude/
+.codex/
+.cursor/
