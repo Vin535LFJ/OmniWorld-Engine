@@ -4,7 +4,7 @@
 
 **Blocked by:** 01（真值心跳）
 
-**Status:** ready-for-agent
+**Status:** design-review — L2 已产出待批：[docs/design/stage-a-core/slices/02-observation-generation.md](../../../docs/design/stage-a-core/slices/02-observation-generation.md)
 
 **流程：** L2 详细设计 → owner 批准 → TDD 实现 → problem-log → 走查。
 
