@@ -39,6 +39,10 @@ build\omniworld_loop.exe --mode phase1   # 世界模型 divergence 评测
 
 本仓库使用本地 Markdown 任务记录（`.scratch/<feature>/` 约定）。详见 `docs/agents/issue-tracker.md`。
 
+### Triage labels
+
+五个 canonical triage roles，label 字符串与 role 同名（默认集：`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`）。详见 `docs/agents/triage-labels.md`。
+
 ### Domain docs
 
 Single-context 布局：仓库根 `GLOSSARY.md` + `docs/adr/`。详见 `docs/agents/domain.md`。
