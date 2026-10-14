@@ -4,18 +4,19 @@
 
 ## 项目事实（开工前先读）
 
-1. [PLAN.md](PLAN.md) — 定位/目标函数/里程碑路线图与 Gate 体系/World Contract v0.1/组件选型/操作规则。
-2. [CURRENT.md](CURRENT.md) — 本周唯一焦点与出口条件。
+1. [PLAN.md](PLAN.md) — 定位/目标函数/里程碑路线图与 Gate 体系/组件选型/操作规则（World Contract 权威文本已迁至 `docs/design/00-总体设计.md` §2，PLAN §七 仅为指针）。
+2. [CURRENT.md](CURRENT.md) — 本周唯一焦点与出口条件（"现在做什么"的**唯一**来源）。
 3. [GLOSSARY.md](GLOSSARY.md) — 领域术语（讨论与命名必须使用其中词汇，见 `docs/agents/domain.md`）。
 4. [docs/adr/](docs/adr/) — 架构决策记录（含既有决策索引）。
 5. `benchmarks/regression/` — 全部性能与指标主张的唯一证据来源。
+6. [docs/agents/workflow-manual.md](docs/agents/workflow-manual.md) — **工作流操作手册**：各环节职责/输入输出/衔接、SOP、状态机、Definition of Done、反模式清单。日常开工直接照此执行。
 
 ## 构建与测试
 
 ```bash
 build.bat --test                # MSVC 环境下 configure + build + ctest（Windows 唯一可靠入口）
-build\omniworld_loop.exe        # Grounding Loop v0 + Gate 1
-build\omniworld_loop.exe --mode phase1   # 世界模型 divergence 评测
+build\runtime_probe.exe --json  # 硬件能力探针（CPU / CUDA / Vulkan）
+# omniworld_loop.exe（Grounding Loop）随阶段 A 切片回归后重新提供（ADR-0010）
 ```
 
 零外部依赖、参考模式位级确定性：同 seed 必须逐字节复现（性能模式按 ADR-0009 容差复现，数字必须标注模式与环境元数据）。没有 benchmark 数据不宣称性能。
@@ -41,7 +42,7 @@ build\omniworld_loop.exe --mode phase1   # 世界模型 divergence 评测
 
 ### Triage labels
 
-五个 canonical triage roles，label 字符串与 role 同名（默认集：`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`）。详见 `docs/agents/triage-labels.md`。
+五个 canonical triage roles（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`）回答"该不该做、谁来做"；本仓库在其上扩展了**工程推进态**（`design-review` / `implementing` / `verifying` / `done`）回答"做到哪一步"。两者共用票据头部的同一个 `Status:` 行；**`design-review → implementing` 只能由 owner 批准触发**。详见 `docs/agents/triage-labels.md`。
 
 ### Domain docs
 
@@ -67,4 +68,5 @@ Single-context 布局：仓库根 `GLOSSARY.md` + `docs/adr/`。详见 `docs/age
 
 - 中文优先（架构文档术语保留英文原文）。
 - `PLAN.md` 之外不新建计划类文档，除非代码先行验证或用户明确要求。
+- 操作流程以 `docs/agents/workflow-manual.md` 为准；该文件只做导航与操作，权威内容仍在 `PLAN.md` / `CURRENT.md` / `docs/design/` / `docs/adr/`。
 - 修改既有文档时合并而非覆盖；用户手写内容永远保留。

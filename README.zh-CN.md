@@ -17,17 +17,20 @@
 | ⑦ 按需 | [`docs/adr/`](docs/adr/) | 每个重大决策"为什么"：0008 方向重开 / 0009 双模式 / 0010 白纸重建 / 0011 后视镜 | 决策的来龙去脉 |
 | ⑧ 按需 | [`GLOSSARY.md`](GLOSSARY.md) · [`benchmarks/regression/`](benchmarks/regression/) | 术语表 · 性能主张的唯一证据 | 概念的精确定义 / 数字出处 |
 
-## 当前状态（2026-10-13）
+## 当前状态
 
-- **白纸共创重建中**（ADR-0010）：旧实现已作废（`git tag pre-rebuild` 可查）；按"设计先行"流程重建——L0 总体设计已冻结（契约 9 条语义 + 架构 + 阶段表），阶段 A 概要设计（L1）已产出待批。
-- 当前可构建代码仅 `runtime_probe`（硬件探针，独立）；引擎随阶段 A 切片逐片回归。
+> "现在做什么"的**单一事实源**是 [`CURRENT.md`](CURRENT.md)。本节只给一句话定位与对外可见的构建状态，不重复 CURRENT 的内容。
+
+- **白纸共创重建中**（ADR-0010）：旧实现已作废（`git tag pre-rebuild` 可查）。按"设计先行"流程重建——L0 总体设计（契约 9 条语义 + 架构 + 阶段表）与阶段 A 概要设计（L1）**均已冻结**；阶段 A 切片逐片交付。
+- 当前可构建代码：`runtime_probe`（硬件探针，独立）+ 阶段 A 切片 01 的模块（`core` / `world_state` / `truth_world`）。
+- `build.bat --test` 当前注册 **2** 个测试：`runtime_probe_smoke` 与 `ow_slice01`。
 - 旧基线（重建对照）：Gate 1 三判据 1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617。
-- 开发流程 = AI Hero 主流程：`grill-with-docs → to-spec → to-tickets → implement+tdd → code-review → retro`（技能映射见 ADR-0010）。
+- 开发流程 = AI Hero 主流程：`grill-with-docs → to-spec → to-tickets → implement+tdd → code-review → retro`（技能映射见 ADR-0010）；日常操作手册见 [`docs/agents/workflow-manual.md`](docs/agents/workflow-manual.md)。
 
 ## 构建与运行
 
 ```bash
-build.bat --test                # Windows 唯一可靠入口（当前 = runtime_probe 冒烟测试 1/1）
+build.bat --test                # Windows 唯一可靠入口（当前注册 runtime_probe_smoke + ow_slice01）
 build\runtime_probe.exe --json  # 硬件能力探针（CPU / CUDA / Vulkan）
 ```
 

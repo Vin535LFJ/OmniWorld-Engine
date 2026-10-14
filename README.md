@@ -17,17 +17,20 @@
 | ⑦ as needed | [`docs/adr/`](docs/adr/) | The "why" of every major decision: 0008 direction reopen / 0009 dual mode / 0010 blank-slate rebuild / 0011 rear-mirror | Decision history |
 | ⑧ as needed | [`GLOSSARY.md`](GLOSSARY.md) · [`benchmarks/regression/`](benchmarks/regression/) | Glossary · the only evidence for performance claims | Precise definitions / where numbers come from |
 
-## Current state (2026-10-13)
+## Current state
 
-- **Blank-slate co-designed rebuild in progress** (ADR-0010): the old implementation is abandoned (see `git tag pre-rebuild`); the rebuild follows a design-first process — L0 overall design is frozen (contract: 9 semantics + architecture + phase plan); stage A high-level design (L1) is drafted, awaiting owner approval.
-- The only buildable code right now is `runtime_probe` (standalone hardware probe); the engine returns slice by slice with stage A.
+> The single source of truth for "what we do now" is [`CURRENT.md`](CURRENT.md). This section only gives a one-line orientation plus the externally visible build state — it does not duplicate CURRENT.
+
+- **Blank-slate co-designed rebuild in progress** (ADR-0010): the old implementation is abandoned (see `git tag pre-rebuild`). The rebuild is design-first — L0 overall design (contract: 9 semantics + architecture + phase plan) and stage A L1 high-level design are both **frozen**; stage A slices are delivered one by one.
+- Buildable code today: `runtime_probe` (standalone hardware probe) plus the stage A slice-01 modules (`core`, `world_state`, `truth_world`).
+- `build.bat --test` currently registers **2** tests: `runtime_probe_smoke` and `ow_slice01`.
 - Pre-rebuild baseline (alignment target): Gate 1 — 1106.7 Hz / adapter integration with zero core changes / ECE separation 0.9617.
-- Dev process = the AI Hero main flow: `grill-with-docs → to-spec → to-tickets → implement+tdd → code-review → retro` (skill mapping in ADR-0010).
+- Dev process = the AI Hero main flow: `grill-with-docs → to-spec → to-tickets → implement+tdd → code-review → retro` (skill mapping in ADR-0010). Day-to-day operating manual: [`docs/agents/workflow-manual.md`](docs/agents/workflow-manual.md).
 
 ## Build & run
 
 ```bash
-build.bat --test                # Windows: the only reliable entry (currently = runtime_probe smoke test 1/1)
+build.bat --test                # Windows: the only reliable entry (currently registers runtime_probe_smoke + ow_slice01)
 build\runtime_probe.exe --json  # hardware capability probe (CPU / CUDA / Vulkan)
 ```
 

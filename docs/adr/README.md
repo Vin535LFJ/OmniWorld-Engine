@@ -18,7 +18,7 @@
 | 决策 | 记录位置 | 日期 |
 |---|---|---|
 | 项目方向：评测优先的 grounding-loop runtime（选 D，否决 A/B/C；**定位部分已被 ADR-0008 取代**，架构资产保留） | [`docs/99-archive/2026-09-28-docs-slim/01-architecture/decisions/ADR-0007-project-direction.md`](../99-archive/2026-09-28-docs-slim/01-architecture/decisions/ADR-0007-project-direction.md)；证据：[`docs/17-research/2026-09-21-direction-decision.md`](../17-research/2026-09-21-direction-decision.md) | 2026-09-21 |
-| World Contract v0.1 冻结（实体/tick/所有权/置信度语义；世界模型适配器族；回放格式） | [`PLAN.md`](../../PLAN.md) §7 | 2026-09-28 |
+| World Contract v0.1 冻结（实体/tick/所有权/置信度语义；世界模型适配器族；回放格式）——**已被 ADR-0010/0011 的白纸重设计取代**，现行权威文本 = [`docs/design/00-总体设计.md`](../design/00-总体设计.md) §2（PLAN §七 仅为指向它的指针） | 原文：`PLAN.md` §7（tag `pre-rebuild` 可查）；重设计：L0 §2 + ADR-0011 | 2026-09-28 → 2026-10-12 |
 | 组件选型与许可红线（自写四处核心；ONNX/RT-DETR/DA-V2-Small/MCAP 归位） | [`docs/17-research/2026-09-24-github-reuse-map.md`](../17-research/2026-09-24-github-reuse-map.md) | 2026-09-24 |
 | 双轨成功模型（生态采用 + 个人技能敲门砖；**已被 ADR-0008 三层目标函数取代**） | [`PLAN.md`](../../PLAN.md) §4（已重写） | 2026-09-24 |
 | 历史 ADR-0001~0015（模板化旧集：Vulkan/CUDA/Linux/ROS2-adapter/Brain-agnostic 等） | [`docs/99-archive/2026-09-planning-era/decisions/`](../99-archive/2026-09-planning-era/decisions/) 与 [`docs/99-archive/2026-09-28-docs-slim/01-architecture/decisions/`](../99-archive/2026-09-28-docs-slim/01-architecture/decisions/) | 2026-08~09 |

@@ -97,20 +97,20 @@
 
 **历史**：v0.1 契约原文（2026-09-28 冻结）仅存 git 历史（`pre-rebuild` 及更早的 PLAN.md）。
 
-## 八、执行状态（快照 2026-10-10）
+## 八、执行状态
 
-- **Phase 0 + 1 已完成**（2026-09-28）：Gate 1 三判据 PASS（1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617）→ [`benchmarks/regression/2026-09-28-grounding-loop-v0.md`](benchmarks/regression/2026-09-28-grounding-loop-v0.md)；五世界模型 divergence 五级分离 → [`benchmarks/regression/2026-09-28-phase1-world-models.md`](benchmarks/regression/2026-09-28-phase1-world-models.md)。
-- **2026-10-10 方向重开**（ADR-0008）：R3 融合定案；本文件旧日期层积（09-21/09-24/09-28 补录）收拢入各节正文。
-- **下一步 = Phase 2「AI 入环」**：ONNX 换装 + 双模式回归框架 + 架构候选 #3 折入，详见 [CURRENT.md](CURRENT.md)。
+> **本节不承载"现在做什么"。** 当前焦点与出口条件的唯一来源是 [`CURRENT.md`](CURRENT.md)。本节只保留**不随进度变化**的历史事实与重建对照基线，避免出现第二份进度快照。
+
+- **重建对照基线**（阶段 A 出口的对齐目标）：Gate 1 三判据 1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617；五世界模型 divergence 五级分离。证据：[`benchmarks/regression/`](benchmarks/regression/)。
+- **时间线**（只增不改）：2026-09-28 Phase 0/1 完成、契约 v0.1 冻结 → 2026-10-10 方向重开（ADR-0008；双模式 ADR-0009）→ 2026-10-12 过程重开（ADR-0010：旧实现作废、tag `pre-rebuild`，白纸共创重建）。
 - **挂起的架构候选**（2026-10-09 评审，报告 [`docs/17-research/2026-10-09-architecture-review.html`](docs/17-research/2026-10-09-architecture-review.html)）：随旧实现一并归档，其设计洞见（如"裁决结果应携带它裁决的内容"）进入白纸重建的后视镜审查。
-- **2026-10-12 过程重开**（ADR-0010）：白纸共创重建启动——旧实现作废（tag `pre-rebuild`），R1a 总体设计共创进行中，设计层见 [`docs/design/`](docs/design/)；设计先行：L2 批准才动工。
 
 ## 九、操作规则
 
 1. 新想法 → `docs/17-research/research-queue.md`，不进 sprint；sprint 内只执行不扩写。
 2. 没有 benchmark 数据不宣称性能；报告必须带完整环境元数据 **+ 运行模式标注**（参照 2026-09-18 baseline 格式）。
 3. 研究只解当前 phase 出口所需的问题；产 research note 带来源。
-4. **代码未跑通前不加新文档。**
+4. **代码未跑通前不加新文档**；例外 = 用户明确要求、或代码先行验证后补记（如 `docs/agents/workflow-manual.md`，owner 2026-10-14 要求）。
 5. **方向/契约/边界级决策 → `docs/adr/` 落 ADR，禁止以"补录"形式堆进本文件**（2026-10-10 新增：PLAN 层积是上次失焦的结构性根因）。
 6. **设计先行**：任何代码切片动工前，必须有该切片经 owner 批准的详细设计（`docs/design/` L2）；每层设计以批准为冻结，变更走 ADR（2026-10-12，ADR-0010）。
 
