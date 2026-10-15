@@ -1,7 +1,0 @@
-C:/Users/Giant/Desktop/GITCODE/OmniWorld-Engine/build-rel/CMakeFiles/runtime_probe.dir
-C:/Users/Giant/Desktop/GITCODE/OmniWorld-Engine/build-rel/CMakeFiles/omniworld_loop.dir
-C:/Users/Giant/Desktop/GITCODE/OmniWorld-Engine/build-rel/CMakeFiles/ow_core.dir
-C:/Users/Giant/Desktop/GITCODE/OmniWorld-Engine/build-rel/CMakeFiles/ow_tests.dir
-C:/Users/Giant/Desktop/GITCODE/OmniWorld-Engine/build-rel/CMakeFiles/rebuild_cache.dir
-C:/Users/Giant/Desktop/GITCODE/OmniWorld-Engine/build-rel/CMakeFiles/test.dir
-C:/Users/Giant/Desktop/GITCODE/OmniWorld-Engine/build-rel/CMakeFiles/edit_cache.dir

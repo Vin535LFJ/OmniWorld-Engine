@@ -15,3 +15,4 @@ CMakeUserPresets.json
 .claude/
 .codex/
 .cursor/
+build-rel/
