@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# OmniWorld pre-commit gate (SOP-7 retro, 2026-10-14).
+# Blocks: (1) staged build artifacts, (2) mermaid lint failures in changed
+# markdown, (3) failing tests (incremental build.bat --test).
+# Escape hatch for deliberate states (TDD red phase, WIP):
+#   git commit --no-verify
+# Install (from repo root):
+#   cp tools/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+set -u
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 1
+
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+fail=0
+
+# 1) Path hygiene: build artifacts never enter the repo.
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  case "$f" in
+    build/*|build-rel/*|*.obj|*.exe|*.pdb|*.ilk|*.ninja|*.ninja_log)
+      echo "BLOCK: staged build artifact: $f" >&2
+      fail=1
+      ;;
+  esac
+done <<< "$staged"
+
+# 2) Mermaid lint on changed markdown (pattern checks, see tools/mermaid_lint.mjs).
+md="$(printf '%s' "$staged" | grep -E '\.md$' || true)"
+if [ -n "$md" ] && [ -f tools/mermaid_lint.mjs ]; then
+  # shellcheck disable=SC2086  (repo paths carry no spaces by convention)
+  if ! node tools/mermaid_lint.mjs $md; then
+    fail=1
+  fi
+fi
+
+# 3) Tests: incremental configure+build+ctest (~seconds when up to date).
+if ! cmd //c build.bat --test >/dev/null 2>&1; then
+  echo "BLOCK: build.bat --test failed. Deliberate (red phase / WIP)? Use: git commit --no-verify" >&2
+  fail=1
+fi
+
+exit $fail

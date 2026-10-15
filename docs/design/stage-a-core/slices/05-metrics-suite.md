@@ -33,7 +33,7 @@ sequenceDiagram
     L->>M: feed（ws, ledger, tick）
     loop 每个已注册指标（注册序固定）
         M->>Mi: feed（ws, ledger, tick）
-        Mi->>Mi: 按账本 at(tick) 累加
+        Mi->>Mi: 按账本 at（tick） 累加
     end
     L->>M: report（）
     M-->>L: map 名→值（按名排序）

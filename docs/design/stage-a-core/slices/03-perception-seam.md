@@ -39,7 +39,7 @@ sequenceDiagram
     REG-->>T: unique_ptr（查无此人 → nullptr）
     T->>AD: observe（Observation）
     AD->>AD: 行优先扫描 → 连通分量 → 质心
-    AD-->>T: Proposal[]（五元组 齐备）
+    AD-->>T: Proposal 便签（五元组齐备）
     Note over T,AD: 适配器全程只见 Observation，<br/>对 WorldState 零引用（编译期事实）
 ```
 
