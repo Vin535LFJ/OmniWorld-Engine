@@ -65,6 +65,26 @@ else
 fi
 
 hr
+echo "== guardrail =="
+# .git/hooks/ is NOT version-controlled, so a fresh clone gets the tracked
+# source (tools/hooks/pre-commit) but no installed hook -- the gate would
+# silently not run. Catch that here.
+if [ -f tools/hooks/pre-commit ]; then
+  if [ ! -f .git/hooks/pre-commit ]; then
+    echo "!! pre-commit hook NOT installed — the gate is not running."
+    echo "   install: cp tools/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit"
+    FAIL=1
+  elif ! cmp -s tools/hooks/pre-commit .git/hooks/pre-commit; then
+    echo "!! installed hook differs from tools/hooks/pre-commit — reinstall it"
+    FAIL=1
+  else
+    echo "pre-commit hook installed and matches tools/hooks/pre-commit"
+  fi
+else
+  echo "(no tools/hooks/pre-commit in this repo)"
+fi
+
+hr
 echo "== doc links (steering + design docs) =="
 TRACKED_FILE=$(mktemp)
 git -c core.quotePath=false ls-files > "$TRACKED_FILE"
