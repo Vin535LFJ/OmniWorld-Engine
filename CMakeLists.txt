@@ -57,7 +57,8 @@ add_library(ow_core OBJECT
   src/perception/blob_detect.cpp
   src/perception/blob_detect_overconfident.cpp
   src/adjudication/adjudication.cpp
-  src/belief/ledger.cpp)
+  src/belief/ledger.cpp
+  src/metrics/metrics.cpp)
 
 target_include_directories(ow_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_target_properties(ow_core PROPERTIES
@@ -91,3 +92,4 @@ add_test(NAME ow_slice01 COMMAND ow_tests slice01)
 add_test(NAME ow_slice02 COMMAND ow_tests slice02)
 add_test(NAME ow_slice03 COMMAND ow_tests slice03)
 add_test(NAME ow_slice04 COMMAND ow_tests slice04)
+add_test(NAME ow_slice05 COMMAND ow_tests slice05)

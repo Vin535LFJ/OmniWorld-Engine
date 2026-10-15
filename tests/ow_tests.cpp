@@ -4,6 +4,7 @@
 #include "core/rng.hpp"
 #include "adjudication/adjudication.hpp"
 #include "belief/ledger.hpp"
+#include "metrics/metrics.hpp"
 #include "observation/observation.hpp"
 #include "perception/adapter.hpp"
 #include "truth_world/truth_world.hpp"
@@ -677,6 +678,162 @@ int run() {
 
 }  // namespace slice04
 
+namespace slice05 {
+
+// --- helpers -------------------------------------------------------------
+
+BeliefEntry matched_at(float x, float z, float conf, EntityId truth_id,
+                       Tick t) {
+  Proposal p;
+  p.producer = "test";
+  p.tick_observed = t;
+  p.target = NewEntity{};
+  Transform tr;
+  tr.position = Vec3{x, 0.0f, z};
+  p.fields.transform = tr;
+  p.confidence = conf;
+  return BeliefEntry{std::move(p),
+                     AdjudicationResult{VerdictKind::Matched, truth_id, {}}, t};
+}
+
+struct World2 {
+  TruthWorld tw{1};
+  WorldState ws;
+  EntityId e1, e2;
+  World2() {
+    e1 = tw.spawn(ws, ClassTag{"a"},
+                  Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}}, Vec3{});
+    e2 = tw.spawn(ws, ClassTag{"b"},
+                  Transform{Vec3{0.75f, 0.0f, 0.25f}, Quat{}}, Vec3{});
+  }
+};
+
+// --- behavior tests ------------------------------------------------------
+
+void test_defaults_present() {
+  MetricsModule m;
+  const auto r = m.report();
+  CHECK(r.count("divergence") == 1);
+  CHECK(r.count("ece") == 1);
+  CHECK(r.count("identity_stability") == 1);
+}
+
+void test_divergence_exact() {
+  World2 w;
+  BeliefLedger l;
+  // errors: |0.625-0.5|=0.125 and |0.75-0.5|=0.25 (both binary-exact)
+  l.record(matched_at(0.625f, 0.5f, 0.875f, w.e1, 7));
+  l.record(matched_at(0.75f, 0.5f, 0.875f, w.e1, 7));
+  MetricsModule m;
+  m.feed(w.ws, l, 7);
+  const auto rep = m.report();
+  CHECK(rep.at("divergence") == 0.1875);
+}
+
+void test_ece_discrimination_exact() {
+  // Honest: conf 0.875 with acc 7/8 -> ECE 0. Overconfident: same errors with
+  // conf 1.0 -> ECE 0.125. Gate-1c analog: the lie must surface, exactly.
+  BeliefLedger honest, loud;
+  for (int i = 0; i < 7; ++i) {  // 7 correct (err 0)
+    honest.record(matched_at(0.5f, 0.5f, 0.875f, 1, 3));
+    loud.record(matched_at(0.5f, 0.5f, 1.0f, 1, 3));
+  }
+  // 1 wrong (err 0.5 > tol 0.1)
+  honest.record(matched_at(0.0f, 0.5f, 0.875f, 1, 3));
+  loud.record(matched_at(0.0f, 0.5f, 1.0f, 1, 3));
+
+  World2 w;
+  MetricsModule ma, mb;
+  ma.feed(w.ws, honest, 3);
+  mb.feed(w.ws, loud, 3);
+  const double ea = ma.report().at("ece");
+  const double eb = mb.report().at("ece");
+  CHECK(ea == 0.0);     // honest calibration: exact zero
+  CHECK(eb == 0.125);   // the overconfidence tax, exact
+  CHECK(eb > ea);
+}
+
+void test_identity_stability() {
+  World2 w;
+  {
+    BeliefLedger l;  // tick1 {1,2}, tick2 {1,2}: perfectly tracked
+    l.record(matched_at(0.5f, 0.5f, 0.9f, 1, 1));
+    l.record(matched_at(0.75f, 0.25f, 0.9f, 2, 1));
+    l.record(matched_at(0.5f, 0.5f, 0.9f, 1, 2));
+    l.record(matched_at(0.75f, 0.25f, 0.9f, 2, 2));
+    MetricsModule m;
+    m.feed(w.ws, l, 1);
+    m.feed(w.ws, l, 2);
+    CHECK(m.report().at("identity_stability") == 1.0);
+  }
+  {
+    BeliefLedger l;  // tick1 {1,2}, tick2 {1}: one entity lost -> 0
+    l.record(matched_at(0.5f, 0.5f, 0.9f, 1, 1));
+    l.record(matched_at(0.75f, 0.25f, 0.9f, 2, 1));
+    l.record(matched_at(0.5f, 0.5f, 0.9f, 1, 2));
+    MetricsModule m;
+    m.feed(w.ws, l, 1);
+    m.feed(w.ws, l, 2);
+    CHECK(m.report().at("identity_stability") == 0.0);
+  }
+}
+
+void test_metric_is_pluggable() {
+  struct Const42 final : Metric {
+    const char* name() const override { return "forty_two"; }
+    void feed(const WorldState&, const BeliefLedger&, Tick) override {}
+    double value() const override { return 42.5; }
+  };
+  MetricsModule m;
+  m.register_metric(std::make_unique<Const42>());  // core untouched
+  const auto r = m.report();
+  CHECK(r.count("forty_two") == 1);
+}
+
+void test_determinism_pairing() {
+  World2 w;
+  BeliefLedger l;
+  l.record(matched_at(0.625f, 0.5f, 0.875f, w.e1, 1));
+  MetricsModule a, b;
+  a.feed(w.ws, l, 1);
+  b.feed(w.ws, l, 1);
+  CHECK(a.report() == b.report());
+  l.record(matched_at(0.0f, 0.5f, 0.875f, w.e1, 2));  // mutate -> must differ
+  MetricsModule c;
+  c.feed(w.ws, l, 1);
+  c.feed(w.ws, l, 2);
+  CHECK(!(c.report() == a.report()));
+}
+
+void test_empty_ledger_safe() {
+  World2 w;
+  BeliefLedger l;  // nothing recorded
+  MetricsModule m;
+  m.feed(w.ws, l, 1);
+  const auto r = m.report();
+  CHECK(r.at("divergence") == 0.0);
+  CHECK(r.at("ece") == 0.0);
+  CHECK(r.at("identity_stability") == 1.0);  // declared v1 semantic
+}
+
+int run() {
+  test_defaults_present();
+  test_divergence_exact();
+  test_ece_discrimination_exact();
+  test_identity_stability();
+  test_metric_is_pluggable();
+  test_determinism_pairing();
+  test_empty_ledger_safe();
+  if (g_failures == 0) {
+    std::printf("slice05: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice05: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice05
+
 int main(int argc, char** argv) {
   if (argc < 2) {
     std::printf("usage: ow_tests <slice-name>\n");
@@ -686,6 +843,7 @@ int main(int argc, char** argv) {
   if (std::strcmp(argv[1], "slice02") == 0) return slice02::run();
   if (std::strcmp(argv[1], "slice03") == 0) return slice03::run();
   if (std::strcmp(argv[1], "slice04") == 0) return slice04::run();
+  if (std::strcmp(argv[1], "slice05") == 0) return slice05::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;
 }
