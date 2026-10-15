@@ -15,4 +15,8 @@ CMakeUserPresets.json
 .claude/
 .codex/
 .cursor/
+
+# 跨 shell 陷阱的产物：在 bash 里跑 cmd 风格的 `>nul` 会真的创建一个名为 nul 的文件
+# （cmd 里 nul 是空设备，bash 里不是）。Windows 保留名，删不掉，只能挡在版本控制外。
+nul
 build-rel/

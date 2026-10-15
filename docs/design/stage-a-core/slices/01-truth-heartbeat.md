@@ -2,7 +2,7 @@
 
 > **设计版本**：v1 · **批准方式**：预授权（owner「继续完成目标」指令；授权范围 = 本切片全部设计点；偏离即停并回报） · **批准日期**：2026-10-13
 > 状态：**已批准并实现完成**（切片 01 绿；完成记录见 `CURRENT.md` 与提交 `de8d512` / `3011cd0`）；任何设计点异议 → 修订本文件并记录，语义级变更走 ADR。
-> 上承：L1 §4 签名 / §5 切片 01；票据：[.scratch/stage-a-core/issues/01-truth-heartbeat.md](../../../.scratch/stage-a-core/issues/01-truth-heartbeat.md)。
+> 上承：L1 §4 签名 / §5 切片 01；票据：[.scratch/stage-a-core/issues/01-truth-heartbeat.md](../../../../.scratch/stage-a-core/issues/01-truth-heartbeat.md)。
 > 模板依据：GB/T 8567 详细设计说明书条目（程序描述 / 数据结构 / 算法 / 流程逻辑 / 接口 / 限制条件 / 测试计划）。
 
 ## 1. 程序描述
