@@ -1,0 +1,7 @@
+# Line-ending discipline: LF in the repository and the working tree,
+# Windows scripts keep CRLF (cmd parsers). This kills the per-commit
+# LF/CRLF warning noise that once buried a real anomaly (build-rel/ staged
+# artifacts, 2026-10-14) and steadies file-state tracking for tooling.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf

@@ -16,6 +16,7 @@
 | ⑥ when working | [`.scratch/stage-a-core/`](.scratch/stage-a-core/) | **Task tickets**: spec + slice tickets 01—06 (current active feature) | Which task is live, what its acceptance criteria are |
 | ⑦ as needed | [`docs/adr/`](docs/adr/) | The "why" of every major decision: 0008 direction reopen / 0009 dual mode / 0010 blank-slate rebuild / 0011 rear-mirror | Decision history |
 | ⑧ as needed | [`GLOSSARY.md`](GLOSSARY.md) · [`benchmarks/regression/`](benchmarks/regression/) | Glossary · the only evidence for performance claims | Precise definitions / where numbers come from |
+| ⑨ when studying | [`docs/onboarding-and-interview-prep.md`](docs/onboarding-and-interview-prep.md) | **Study guide**: architecture walkthrough, module map, code reading order, verified run steps, interview talking points | How to learn this project and present it |
 
 ## Current state
 

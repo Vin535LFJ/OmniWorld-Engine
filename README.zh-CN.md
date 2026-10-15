@@ -16,6 +16,7 @@
 | ⑥ 干活时 | [`.scratch/stage-a-core/`](.scratch/stage-a-core/) | **任务票据**：spec + 切片票 01—06（当前活跃 feature） | 现在干哪个任务、验收标准是什么 |
 | ⑦ 按需 | [`docs/adr/`](docs/adr/) | 每个重大决策"为什么"：0008 方向重开 / 0009 双模式 / 0010 白纸重建 / 0011 后视镜 | 决策的来龙去脉 |
 | ⑧ 按需 | [`GLOSSARY.md`](GLOSSARY.md) · [`benchmarks/regression/`](benchmarks/regression/) | 术语表 · 性能主张的唯一证据 | 概念的精确定义 / 数字出处 |
+| ⑨ 学习 / 面试时 | [`docs/onboarding-and-interview-prep.md`](docs/onboarding-and-interview-prep.md) | **掌握指南**：架构走读 / 模块地图 / 代码阅读顺序 / 实测运行步骤 / 面试要点 | 怎么学、怎么讲这个项目 |
 
 ## 当前状态
 
