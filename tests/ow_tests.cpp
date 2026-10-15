@@ -4,10 +4,12 @@
 #include "core/rng.hpp"
 #include "adjudication/adjudication.hpp"
 #include "belief/ledger.hpp"
+#include "loop/driver.hpp"
 #include "metrics/metrics.hpp"
 #include "observation/observation.hpp"
 #include "perception/adapter.hpp"
 #include "truth_world/truth_world.hpp"
+#include "world_model/world_model.hpp"
 #include "world_state/world_state.hpp"
 
 #include <cstdint>
@@ -834,6 +836,115 @@ int run() {
 
 }  // namespace slice05
 
+namespace slice06 {
+
+RunConfig base_cfg() {
+  RunConfig cfg{};
+  cfg.ticks = 50;
+  cfg.seed = 7;
+  cfg.width = 32;
+  cfg.height = 32;
+  cfg.footprint = 0.02f;
+  cfg.perception_adapters = {"blob_detect", "blob_detect_overconfident"};
+  cfg.world_models = {"zero_delta", "linear_extrapolation"};
+  return cfg;
+}
+
+void test_world_model_registry() {
+  const auto names = world_model::names();
+  CHECK(names.size() == 2);
+  CHECK(names[0] == "linear_extrapolation");
+  CHECK(names[1] == "zero_delta");
+  CHECK(world_model::make("zero_delta") != nullptr);
+  CHECK(world_model::make("linear_extrapolation") != nullptr);
+  CHECK(world_model::make("nope") == nullptr);
+}
+
+void test_models_predict_exactly() {
+  TruthWorld tw(1);
+  WorldState ws;
+  const EntityId e1 = tw.spawn(ws, ClassTag{"a"},
+                               Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
+                               Vec3{0.25f, 0.0f, 0.0f});
+  auto lin = world_model::make("linear_extrapolation");
+  const auto lp = lin->predict(4, ws);
+  CHECK(lp.size() == 1);
+  if (!lp.empty()) {
+    CHECK(std::holds_alternative<EntityId>(lp[0].target));
+    CHECK(std::get<EntityId>(lp[0].target) == e1);
+    CHECK(lp[0].fields.transform.has_value());
+    CHECK(lp[0].fields.transform->position.x == 0.75f);  // 0.5+0.25 exact
+    CHECK(lp[0].confidence == 0.5f);                     // v0.1 as-built habit
+    CHECK(lp[0].tick_observed == 4);
+  }
+  auto zero = world_model::make("zero_delta");
+  const auto zp = zero->predict(4, ws);
+  CHECK(zp.size() == 1);
+  if (!zp.empty()) {
+    CHECK(zp[0].fields.transform->position.x == 0.5f);  // stays put
+  }
+}
+
+void test_loop_end_to_end() {
+  LoopDriver loop(8);
+  const RunReport r = loop.run(base_cfg());
+  CHECK(r.ticks_run == 50);
+  CHECK(r.ledger_entries > 0);
+  CHECK(r.metrics.count("divergence") == 1);
+  CHECK(r.metrics.count("ece") == 1);
+  CHECK(r.metrics.count("identity_stability") == 1);
+  CHECK(r.applied > 0);
+  CHECK(r.applied + r.announced + r.rejected == r.ledger_entries);
+}
+
+void test_loop_determinism_pairing() {
+  LoopDriver loop(8);
+  const RunReport a = loop.run(base_cfg());
+  const RunReport b = loop.run(base_cfg());
+  CHECK(a.world_hash == b.world_hash);
+  CHECK(a.ledger_hash == b.ledger_hash);
+  CHECK(a.metrics == b.metrics);  // doubles compared exactly
+  RunConfig other = base_cfg();
+  other.seed = 8;
+  const RunReport c = loop.run(other);
+  CHECK(c.world_hash != a.world_hash);  // progress: seed actually matters
+}
+
+void test_adapter_fault_isolation() {
+  struct ThrowingPerception final : PerceptionAdapter {
+    const char* name() const override { return "throwing_test"; }
+    std::vector<Proposal> observe(const Observation&) override {
+      throw std::runtime_error("adapter boom");
+    }
+  };
+  perception::reg("throwing_test", []() -> std::unique_ptr<PerceptionAdapter> {
+    return std::make_unique<ThrowingPerception>();
+  });
+  RunConfig cfg = base_cfg();
+  cfg.perception_adapters = {"blob_detect", "throwing_test"};
+  LoopDriver loop(8);
+  const RunReport r = loop.run(cfg);
+  CHECK(r.ticks_run == 50);       // kept ticking...
+  CHECK(r.adapter_faults >= 50);  // ...while counting the fault every tick
+  CHECK(r.ledger_entries > 0);    // other adapters unaffected
+}
+
+int run() {
+  test_world_model_registry();
+  test_models_predict_exactly();
+  test_loop_end_to_end();
+  test_loop_determinism_pairing();
+  test_adapter_fault_isolation();
+  if (g_failures == 0) {
+    std::printf("slice06: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice06: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice06
+
 int main(int argc, char** argv) {
   if (argc < 2) {
     std::printf("usage: ow_tests <slice-name>\n");
@@ -844,6 +955,7 @@ int main(int argc, char** argv) {
   if (std::strcmp(argv[1], "slice03") == 0) return slice03::run();
   if (std::strcmp(argv[1], "slice04") == 0) return slice04::run();
   if (std::strcmp(argv[1], "slice05") == 0) return slice05::run();
+  if (std::strcmp(argv[1], "slice06") == 0) return slice06::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;
 }

@@ -58,7 +58,11 @@ add_library(ow_core OBJECT
   src/perception/blob_detect_overconfident.cpp
   src/adjudication/adjudication.cpp
   src/belief/ledger.cpp
-  src/metrics/metrics.cpp)
+  src/metrics/metrics.cpp
+  src/world_model/registry.cpp
+  src/world_model/zero_delta.cpp
+  src/world_model/linear_model.cpp
+  src/loop/driver.cpp)
 
 target_include_directories(ow_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_target_properties(ow_core PROPERTIES
@@ -86,6 +90,21 @@ else()
   target_compile_options(ow_tests PRIVATE -Wall -Wextra)
 endif()
 
+# ---------------------------------------------------------------------------
+# apps
+# ---------------------------------------------------------------------------
+add_executable(omniworld_loop apps/omniworld_loop.cpp)
+target_link_libraries(omniworld_loop PRIVATE ow_core)
+set_target_properties(omniworld_loop PROPERTIES
+  CXX_STANDARD 20
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+if(MSVC)
+  target_compile_options(omniworld_loop PRIVATE /utf-8 /permissive- /W4)
+else()
+  target_compile_options(omniworld_loop PRIVATE -Wall -Wextra)
+endif()
+
 enable_testing()
 add_test(NAME runtime_probe_smoke COMMAND runtime_probe --json)
 add_test(NAME ow_slice01 COMMAND ow_tests slice01)
@@ -93,3 +112,4 @@ add_test(NAME ow_slice02 COMMAND ow_tests slice02)
 add_test(NAME ow_slice03 COMMAND ow_tests slice03)
 add_test(NAME ow_slice04 COMMAND ow_tests slice04)
 add_test(NAME ow_slice05 COMMAND ow_tests slice05)
+add_test(NAME ow_slice06 COMMAND ow_tests slice06)
