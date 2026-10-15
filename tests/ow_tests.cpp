@@ -2,6 +2,8 @@
 // Slice granularity in ctest: one test name per slice, so a failure names its slice.
 #include "core/hash.hpp"
 #include "core/rng.hpp"
+#include "adjudication/adjudication.hpp"
+#include "belief/ledger.hpp"
 #include "observation/observation.hpp"
 #include "perception/adapter.hpp"
 #include "truth_world/truth_world.hpp"
@@ -489,6 +491,192 @@ int run() {
 
 }  // namespace slice03
 
+namespace slice04 {
+
+// --- helpers (duplicated from slice01 on purpose: per-slice local) -------
+
+std::uint64_t hash_state_s04(const WorldState& ws) {
+  Hasher h;
+  h.value(ws.tick());
+  for (const Entity& e : ws.entities()) {
+    h.value(e.id);
+    h.bytes(e.class_tag.value.data(), e.class_tag.value.size());
+    h.value(e.transform.position);
+    h.value(e.transform.orientation);
+    h.value(e.velocity);
+  }
+  return h.result();
+}
+
+Proposal pos_proposal(const char* producer, Tick t, float x, float z,
+                      float conf) {
+  Proposal p;
+  p.producer = producer;
+  p.tick_observed = t;
+  p.target = NewEntity{};
+  Transform tr;
+  tr.position = Vec3{x, 0.0f, z};
+  p.fields.transform = tr;
+  p.confidence = conf;
+  return p;
+}
+
+Proposal id_proposal(const char* producer, Tick t, EntityId id, float conf) {
+  Proposal p;
+  p.producer = producer;
+  p.tick_observed = t;
+  p.target = id;
+  Transform tr;
+  tr.position = Vec3{0.0f, 0.0f, 0.0f};
+  p.fields.transform = tr;
+  p.confidence = conf;
+  return p;
+}
+
+struct Scene {
+  TruthWorld tw;
+  WorldState ws;
+  EntityId e1, e2;
+  Scene() : tw(1) {
+    e1 = tw.spawn(ws, ClassTag{"a"},
+                  Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}}, Vec3{});
+    e2 = tw.spawn(ws, ClassTag{"b"},
+                  Transform{Vec3{0.25f, 0.0f, 0.25f}, Quat{}}, Vec3{});
+  }
+};
+
+// --- behavior tests ------------------------------------------------------
+
+void test_schema_rejection_carries_reason() {
+  Scene s;
+  NearestPositionStrategy strat;
+  Proposal bad = pos_proposal("p", 0, 0.5f, 0.5f, 1.5f);
+  const auto v = strat.resolve(bad, s.ws);
+  CHECK(v.kind == VerdictKind::Rejected);
+  CHECK(!v.reason.empty());
+  Proposal no_producer = pos_proposal("", 0, 0.5f, 0.5f, 0.5f);
+  const auto v2 = strat.resolve(no_producer, s.ws);
+  CHECK(v2.kind == VerdictKind::Rejected);
+  CHECK(!v2.reason.empty());
+}
+
+void test_explicit_target_match_and_unknown() {
+  Scene s;
+  NearestPositionStrategy strat;
+  const auto hit = strat.resolve(id_proposal("p", 0, s.e1, 0.5f), s.ws);
+  CHECK(hit.kind == VerdictKind::Matched && hit.matched == s.e1);
+  const auto miss = strat.resolve(id_proposal("p", 0, 999, 0.5f), s.ws);
+  CHECK(miss.kind == VerdictKind::Rejected && !miss.reason.empty());
+}
+
+void test_position_association() {
+  Scene s;
+  NearestPositionStrategy strat;  // tol = 0.1
+  const auto near = strat.resolve(pos_proposal("p", 0, 0.52f, 0.5f, 0.5f), s.ws);
+  CHECK(near.kind == VerdictKind::Matched && near.matched == s.e1);
+  const auto far = strat.resolve(pos_proposal("p", 0, 0.9f, 0.9f, 0.5f), s.ws);
+  CHECK(far.kind == VerdictKind::NewEntity && far.matched == 0);
+}
+
+void test_missing_position_rejected() {
+  Scene s;
+  NearestPositionStrategy strat;
+  Proposal p;
+  p.producer = "p";
+  p.confidence = 0.5f;
+  p.target = NewEntity{};  // no transform claimed
+  const auto v = strat.resolve(p, s.ws);
+  CHECK(v.kind == VerdictKind::Rejected);
+  CHECK(v.reason.find("position") != std::string::npos);
+}
+
+void test_tie_breaks_by_id_order() {
+  TruthWorld tw(7);
+  WorldState ws;
+  tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.25f, 0.0f, 0.0f}, Quat{}}, Vec3{});
+  tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.75f, 0.0f, 0.0f}, Quat{}}, Vec3{});
+  NearestPositionStrategy strat(0.5f);  // big tolerance
+  const auto v = strat.resolve(pos_proposal("p", 0, 0.5f, 0.0f, 0.9f), ws);
+  CHECK(v.kind == VerdictKind::Matched);
+  CHECK(v.matched == 1);  // id order: first entity wins the tie
+}
+
+void test_strategy_is_replaceable_no_core_change() {
+  struct AlwaysReject final : AssociationStrategy {
+    AdjudicationResult resolve(const Proposal&, const WorldState&) const override {
+      return {VerdictKind::Rejected, 0, "double"};
+    }
+  } always_reject;
+  Scene s;
+  const auto v =
+      always_reject.resolve(pos_proposal("ok", 0, 0.5f, 0.5f, 0.5f), s.ws);
+  CHECK(v.kind == VerdictKind::Rejected && v.reason == "double");
+}
+
+void test_truth_never_written() {
+  Scene s;
+  const std::uint64_t before = hash_state_s04(s.ws);
+  NearestPositionStrategy strat;
+  (void)strat.resolve(pos_proposal("p", 0, 0.52f, 0.5f, 0.5f), s.ws);
+  (void)strat.resolve(pos_proposal("p", 0, 0.9f, 0.9f, 0.5f), s.ws);
+  (void)strat.resolve(id_proposal("p", 0, 999, 0.5f), s.ws);
+  const std::uint64_t after = hash_state_s04(s.ws);
+  CHECK(before == after);  // adjudication must not mutate truth, ever
+}
+
+void test_ledger_append_only() {
+  BeliefLedger ledger;
+  BeliefEntry e1{pos_proposal("p", 0, 0.1f, 0.1f, 0.3f),
+                 {VerdictKind::Matched, 1, ""}, 1};
+  BeliefEntry e2{pos_proposal("p", 0, 0.2f, 0.2f, 0.4f),
+                 {VerdictKind::NewEntity, 0, ""}, 1};
+  ledger.record(e1);
+  ledger.record(e2);
+  BeliefEntry e3{pos_proposal("p", 0, 0.3f, 0.3f, 0.5f),
+                 {VerdictKind::Rejected, 0, "r"}, 2};
+  ledger.record(e3);
+  CHECK(ledger.all().size() == 3);
+  CHECK(ledger.at(1).size() == 2);
+  CHECK(ledger.at(2).size() == 1);
+  CHECK(ledger.at(99).empty());
+  // append-only: earlier entries unchanged byte-for-byte after later appends
+  CHECK(ledger.all()[0].proposal.confidence == 0.3f);
+  CHECK(ledger.all()[0].verdict.matched == 1);
+  CHECK(ledger.all()[0].recorded_at == 1);
+}
+
+void test_determinism_pairing() {
+  Scene s;
+  NearestPositionStrategy strat;
+  const Proposal p = pos_proposal("p", 0, 0.52f, 0.5f, 0.5f);
+  const auto a = strat.resolve(p, s.ws);
+  const auto b = strat.resolve(p, s.ws);
+  CHECK(a.kind == b.kind && a.matched == b.matched && a.reason == b.reason);
+  // progress: a different claim associates to the OTHER entity
+  const auto c = strat.resolve(pos_proposal("p", 0, 0.28f, 0.25f, 0.5f), s.ws);
+  CHECK(c.matched != 0 && c.matched != s.e1);
+}
+
+int run() {
+  test_schema_rejection_carries_reason();
+  test_explicit_target_match_and_unknown();
+  test_position_association();
+  test_missing_position_rejected();
+  test_tie_breaks_by_id_order();
+  test_strategy_is_replaceable_no_core_change();
+  test_truth_never_written();
+  test_ledger_append_only();
+  test_determinism_pairing();
+  if (g_failures == 0) {
+    std::printf("slice04: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice04: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice04
+
 int main(int argc, char** argv) {
   if (argc < 2) {
     std::printf("usage: ow_tests <slice-name>\n");
@@ -497,6 +685,7 @@ int main(int argc, char** argv) {
   if (std::strcmp(argv[1], "slice01") == 0) return slice01::run();
   if (std::strcmp(argv[1], "slice02") == 0) return slice02::run();
   if (std::strcmp(argv[1], "slice03") == 0) return slice03::run();
+  if (std::strcmp(argv[1], "slice04") == 0) return slice04::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;
 }

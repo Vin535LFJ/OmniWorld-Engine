@@ -4,7 +4,7 @@
 
 **Blocked by:** 03（感知接缝）
 
-**Status:** ready-for-agent
+**Status:** implementing — L2 已产出：[04-adjudication-belief-ledger.md](../../../docs/design/stage-a-core/slices/04-adjudication-belief-ledger.md)（预授权执行：切片 03–06 一次性授权，2026-10-14）
 
 **流程：** L2 详细设计 → owner 批准 → TDD 实现 → problem-log → 走查。
 
