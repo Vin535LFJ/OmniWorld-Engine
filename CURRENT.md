@@ -2,23 +2,24 @@
 
 > 只回答一个问题：**现在做什么。** 背景与全貌见 [`PLAN.md`](PLAN.md)。
 
-**阶段 A 实施期：切片 01「真值心跳」02「观察生成」✅ 完成；下一张 = 切片 03「感知接缝」。**
+**阶段 A 实施期：切片 01/02/03 ✅ 完成；下一张 = 切片 04「裁决与信念账本」。**
 
 ## 当前状态
 
 - 规划层全部冻结：L0 总体设计（契约 + 架构 + 阶段表）、L1 阶段 A 概要设计（模块 + 签名 + 模式出处）。
 - **切片 01 已完成**（红→绿）：`core/types` + `core/rng` + `core/hash` + `world_state`（单作者，friend 通道）+ `truth_world`（确定性运动学）；ctest 2/2 绿，其中 `ow_slice01` 覆盖 5 组行为。详见 [L2](docs/design/stage-a-core/slices/01-truth-heartbeat.md)。
 - **切片 02 已完成**（红→绿）：`observation`——有界视图（分辨率参数化、零写死常量）+ 三态可见性 + 帧元数据；ctest 3/3 绿（`ow_slice02` 7 组行为）。详见 [L2](docs/design/stage-a-core/slices/02-observation-generation.md)。
+- **切片 03 已完成**（红=编译坑+桩断言 → 绿）：`core/proposal`（五元组 + schema 校验）+ `perception` 接缝（接口/自注册表/双 blob 检测器）；ctest 4/4 绿。详见 [L2](docs/design/stage-a-core/slices/03-perception-seam.md)。
 - 旧基线（重建对照）：Gate 1 三判据 1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617。
 
-## 下一件事 = 领取切片 03
+## 下一件事 = 领取切片 04
 
-- **票据：[`.scratch/stage-a-core/issues/03-perception-seam.md`](.scratch/stage-a-core/issues/03-perception-seam.md)**（blocked by 02 —— 已解锁，可立即开始）
+- **票据：[`.scratch/stage-a-core/issues/04-adjudication-belief-ledger.md`](.scratch/stage-a-core/issues/04-adjudication-belief-ledger.md)**（blocked by 03 —— 已解锁，可立即开始）
 - 流程：新开一个 session，粘入这段话即可——
 
-  > 实现 .scratch/stage-a-core/issues/03-perception-seam.md——先读 spec 与 docs/design/ 设计文档（含切片 01/02 的 L2 与既有代码），产出该切片的 L2 详细设计给我批准，批准后 TDD 实现。
+  > 实现 .scratch/stage-a-core/issues/04-adjudication-belief-ledger.md——先读 spec 与 docs/design/ 设计文档（含切片 01/02/03 的 L2 与既有代码），产出该切片的 L2 详细设计给我批准，批准后 TDD 实现。
 
-- 切片链：01 ✅ 真值心跳 → 02 ✅ 观察生成 → 03 感知接缝 → 04 裁决与信念账本 → 05 指标组 → 06 世界模型接缝 + Gate-1 对齐报告（06 出口 = 阶段 A 完成）。
+- 切片链：01 ✅ 真值心跳 → 02 ✅ 观察生成 → 03 ✅ 感知接缝 → 04 裁决与信念账本 → 05 指标组 → 06 世界模型接缝 + Gate-1 对齐报告（06 出口 = 阶段 A 完成）。
 
 ## 出口条件（阶段 A）
 

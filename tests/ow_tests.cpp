@@ -3,13 +3,16 @@
 #include "core/hash.hpp"
 #include "core/rng.hpp"
 #include "observation/observation.hpp"
+#include "perception/adapter.hpp"
 #include "truth_world/truth_world.hpp"
 #include "world_state/world_state.hpp"
 
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <stdexcept>
+#include <variant>
 
 namespace {
 int g_failures = 0;
@@ -330,6 +333,162 @@ int run() {
 
 }  // namespace slice02
 
+namespace slice03 {
+
+// --- helpers (self-contained per slice; duplicating the tiny color math
+// is deliberate so each slice's expectations stand alone) ----------------
+
+Observation blank_frame(int w, int h) {
+  Observation o;
+  o.tick = 0;
+  o.meta.width = w;
+  o.meta.height = h;
+  o.rgb.assign(static_cast<std::size_t>(w) * h * 3, 0);
+  for (int i = 0; i < w * h; ++i) {
+    o.rgb[i * 3 + 0] = kBackgroundRgb[0];
+    o.rgb[i * 3 + 1] = kBackgroundRgb[1];
+    o.rgb[i * 3 + 2] = kBackgroundRgb[2];
+  }
+  return o;
+}
+
+void paint_blob(Observation& o, int px0, int py0, int px1, int py1,
+                unsigned char r, unsigned char g, unsigned char b) {
+  for (int py = py0; py <= py1; ++py) {
+    for (int px = px0; px <= px1; ++px) {
+      const std::size_t idx =
+          (static_cast<std::size_t>(py) * o.meta.width + px) * 3;
+      o.rgb[idx] = r;
+      o.rgb[idx + 1] = g;
+      o.rgb[idx + 2] = b;
+    }
+  }
+}
+
+bool proposal_eq(const Proposal& a, const Proposal& b) {
+  if (a.producer != b.producer || a.tick_observed != b.tick_observed ||
+      a.target.index() != b.target.index() || a.confidence != b.confidence)
+    return false;
+  if (a.fields.class_tag.has_value() != b.fields.class_tag.has_value())
+    return false;
+  if (a.fields.transform.has_value() != b.fields.transform.has_value())
+    return false;
+  if (a.fields.transform) {
+    if (a.fields.transform->position.x != b.fields.transform->position.x)
+      return false;
+    if (a.fields.transform->position.z != b.fields.transform->position.z)
+      return false;
+  }
+  return true;
+}
+
+// --- behavior tests ------------------------------------------------------
+
+void test_registry_lookup() {
+  const auto names = perception::names();
+  CHECK(names.size() == 2);
+  CHECK(names[0] == "blob_detect");  // std::map order = sorted = deterministic
+  CHECK(names[1] == "blob_detect_overconfident");
+  CHECK(perception::make("blob_detect") != nullptr);
+  CHECK(perception::make("blob_detect_overconfident") != nullptr);
+  CHECK(perception::make("does_not_exist") == nullptr);
+}
+
+void test_blob_centroid_exact() {
+  Observation o = blank_frame(8, 8);
+  o.tick = 9;
+  paint_blob(o, 2, 4, 3, 5, 200, 60, 90);  // 2x2 at cols 2..3, rows 4..5
+  auto ad = perception::make("blob_detect");
+  const auto ps = ad->observe(o);
+  CHECK(ps.size() == 1);
+  if (ps.empty()) return;
+  const Proposal& p = ps[0];
+  CHECK(p.producer == "blob_detect");
+  CHECK(p.tick_observed == 9);
+  CHECK(std::holds_alternative<NewEntity>(p.target));
+  CHECK(!p.fields.class_tag.has_value());  // adapters describe, never mint class
+  CHECK(p.fields.transform.has_value());
+  // centroid of the 2x2 block: px mean 2.5 -> x = (2.5+0.5)/8 = 0.375 (exact);
+  // py mean 4.5 -> z = 0.625 (exact).
+  CHECK(p.fields.transform->position.x == 0.375f);
+  CHECK(p.fields.transform->position.z == 0.625f);
+  CHECK(p.confidence > 0.0f && p.confidence <= 1.0f);
+}
+
+void test_two_blobs_two_proposals() {
+  Observation o = blank_frame(16, 16);
+  paint_blob(o, 2, 2, 2, 2, 255, 128, 0);
+  paint_blob(o, 12, 12, 13, 13, 0, 128, 255);
+  auto ad = perception::make("blob_detect");
+  const auto ps = ad->observe(o);
+  CHECK(ps.size() == 2);
+  for (const auto& p : ps) {
+    CHECK(p.producer == "blob_detect");
+    CHECK(p.tick_observed == o.tick);
+    CHECK(std::holds_alternative<NewEntity>(p.target));
+  }
+}
+
+void test_overconfident_contrast() {
+  Observation o = blank_frame(8, 8);
+  paint_blob(o, 2, 2, 3, 3, 200, 60, 90);
+  const auto honest = perception::make("blob_detect")->observe(o);
+  const auto loud = perception::make("blob_detect_overconfident")->observe(o);
+  CHECK(honest.size() == 1 && loud.size() == 1);
+  if (honest.empty() || loud.empty()) return;
+  CHECK(loud[0].confidence == 0.99f);  // always max-claims
+  CHECK(honest[0].confidence < 0.99f && honest[0].confidence >= 0.70f);
+}
+
+void test_validate_proposal() {
+  Proposal ok;
+  ok.producer = "t";
+  ok.confidence = 0.5f;
+  CHECK(!validate_proposal(ok).has_value());
+  Proposal p = ok;
+  p.producer = "";
+  CHECK(validate_proposal(p).has_value());
+  p = ok;
+  p.confidence = 1.5f;
+  CHECK(validate_proposal(p).has_value());
+  p.confidence = -0.1f;
+  CHECK(validate_proposal(p).has_value());
+  p.confidence = std::numeric_limits<float>::quiet_NaN();
+  CHECK(validate_proposal(p).has_value());
+}
+
+void test_determinism_pairing() {
+  Observation o = blank_frame(8, 8);
+  paint_blob(o, 2, 4, 3, 5, 200, 60, 90);
+  auto ad = perception::make("blob_detect");
+  const auto a = ad->observe(o);
+  const auto b = ad->observe(o);
+  CHECK(a.size() == b.size());
+  bool all_eq = a.size() == b.size();
+  for (std::size_t i = 0; i < a.size(); ++i) all_eq = all_eq && proposal_eq(a[i], b[i]);
+  CHECK(all_eq);
+  paint_blob(o, 6, 6, 6, 6, 200, 60, 90);  // mutate -> proposals must change
+  const auto c = ad->observe(o);
+  CHECK(c.size() != a.size());
+}
+
+int run() {
+  test_registry_lookup();
+  test_blob_centroid_exact();
+  test_two_blobs_two_proposals();
+  test_overconfident_contrast();
+  test_validate_proposal();
+  test_determinism_pairing();
+  if (g_failures == 0) {
+    std::printf("slice03: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice03: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice03
+
 int main(int argc, char** argv) {
   if (argc < 2) {
     std::printf("usage: ow_tests <slice-name>\n");
@@ -337,6 +496,7 @@ int main(int argc, char** argv) {
   }
   if (std::strcmp(argv[1], "slice01") == 0) return slice01::run();
   if (std::strcmp(argv[1], "slice02") == 0) return slice02::run();
+  if (std::strcmp(argv[1], "slice03") == 0) return slice03::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;
 }

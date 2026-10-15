@@ -11,7 +11,6 @@ namespace {
 struct Color {
   std::uint8_t r, g, b;
 };
-constexpr Color kBackground{0x10, 0x14, 0x18};
 
 // Palette: FNV-1a of the class tag -> deterministic color. Same tag, same
 // color, every run, every machine (reused core/hash.hpp; L2 §2).
@@ -54,9 +53,9 @@ Observation ObservationGenerator::render(const WorldState& ws, Tick tick,
       static_cast<std::size_t>(cfg.width) * static_cast<std::size_t>(cfg.height);
   out.rgb.resize(npx * 3);
   for (std::size_t i = 0; i < npx; ++i) {
-    out.rgb[i * 3 + 0] = kBackground.r;
-    out.rgb[i * 3 + 1] = kBackground.g;
-    out.rgb[i * 3 + 2] = kBackground.b;
+    out.rgb[i * 3 + 0] = kBackgroundRgb[0];
+    out.rgb[i * 3 + 1] = kBackgroundRgb[1];
+    out.rgb[i * 3 + 2] = kBackgroundRgb[2];
   }
 
   for (const Entity& e : ws.entities()) {  // id order = deterministic surface

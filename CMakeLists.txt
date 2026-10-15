@@ -52,7 +52,10 @@ endif()
 add_library(ow_core OBJECT
   src/world_state/world_state.cpp
   src/truth_world/truth_world.cpp
-  src/observation/observation.cpp)
+  src/observation/observation.cpp
+  src/perception/registry.cpp
+  src/perception/blob_detect.cpp
+  src/perception/blob_detect_overconfident.cpp)
 
 target_include_directories(ow_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_target_properties(ow_core PROPERTIES
@@ -84,3 +87,4 @@ enable_testing()
 add_test(NAME runtime_probe_smoke COMMAND runtime_probe --json)
 add_test(NAME ow_slice01 COMMAND ow_tests slice01)
 add_test(NAME ow_slice02 COMMAND ow_tests slice02)
+add_test(NAME ow_slice03 COMMAND ow_tests slice03)

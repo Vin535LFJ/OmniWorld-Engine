@@ -13,6 +13,10 @@
 
 namespace ow {
 
+// Observation-domain background sentinel ("nothing here" color). Adapters
+// consume it; they must not redefine it (slice 03 promoted it to the header).
+inline constexpr std::uint8_t kBackgroundRgb[3] = {0x10, 0x14, 0x18};
+
 struct FrameMeta {
   // Reference-mode labels: this generator is the CPU path (facts, not
   // parameters; performance mode labels arrive with stage B/C).
