@@ -68,5 +68,6 @@ Single-context 布局：仓库根 `GLOSSARY.md` + `docs/adr/`。详见 `docs/age
 
 - 中文优先（架构文档术语保留英文原文）。
 - `PLAN.md` 之外不新建计划类文档，除非代码先行验证或用户明确要求。
+- `workflows/*.md`（+ 根 `NOTES.md`）是 owner 明确要求的工作流规格层，**不属于"计划类文档"**：它规格化的是**重复发生的活动**（交接、收口、素材沉淀…），不是项目路线。规格必须工具无关——任何 AI 拿到文件即可执行。
 - 操作流程以 `docs/agents/workflow-manual.md` 为准；该文件只做导航与操作，权威内容仍在 `PLAN.md` / `CURRENT.md` / `docs/design/` / `docs/adr/`。
 - 修改既有文档时合并而非覆盖；用户手写内容永远保留。
