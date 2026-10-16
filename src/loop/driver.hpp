@@ -19,6 +19,11 @@ namespace ow {
 // the same code path — the artifact labels the difference honestly.
 enum class RunMode { Reference, Performance };
 
+// Execution provider for real-model adapters (stage C). TrtEp is reserved by
+// the L1 (Round 1 #2) and NOT implemented — see the C1 research note for the
+// TensorRT-ABI and deprecation rationale.
+enum class ExecProvider { CpuEp, CudaEp };
+
 // Per-tick microsecond samples keyed by stage (raw evidence kept; p50/p95 is
 // computed on top with the pre-rebuild runner's rank-linear interpolation).
 using StageSamples = std::map<std::string, std::vector<double>>;
@@ -54,6 +59,7 @@ struct RunConfig {
   std::vector<std::string> world_models;
   RunMode mode;        // no default member value; parse_config sets it
   BoundsPolicy bounds;  // no default member value; parse_config sets it
+  ExecProvider ep;      // no default member value; parse_config sets it
 };
 
 struct EnvironmentMeta {
@@ -78,6 +84,7 @@ struct RunReport {
   StageLatency latency_sum;
   std::size_t adapter_faults = 0;  // caught exceptions (isolation proof)
   RunMode mode = RunMode::Reference;
+  ExecProvider ep = ExecProvider::CpuEp;
   BoundsPolicy bounds{BoundsPolicy::Kind::None, 0.0f};  // scene that produced it
   // B3: raw per-stage microsecond samples + percentiles. Diagnostic only:
   // they never enter world_hash / ledger_hash.

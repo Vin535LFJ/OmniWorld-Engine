@@ -162,7 +162,10 @@ std::string run_report_json(const RunReport& r) {
          quote(r.bounds.kind == BoundsPolicy::Kind::Wall ? "wall" : "none") +
          ",\n";
   out += "    \"bounds_margin\": " +
-         num(static_cast<double>(r.bounds.margin)) + "\n";
+         num(static_cast<double>(r.bounds.margin)) + ",\n";
+  out += "    \"ep\": " +
+         quote(r.ep == ExecProvider::CudaEp ? std::string("cuda")
+                                            : std::string("cpu")) + "\n";
   out += "  },\n";
   out += "  \"environment\": {\n";
   out += "    \"os\": " + quote(env.os) + ",\n";
@@ -221,6 +224,7 @@ std::variant<RunConfig, std::string> parse_config(int argc, const char* const* a
   cfg.world_models = {"zero_delta", "linear_extrapolation"};
   cfg.mode = RunMode::Reference;
   cfg.bounds = BoundsPolicy{BoundsPolicy::Kind::None, 0.02f};
+  cfg.ep = ExecProvider::CpuEp;  // CLI default: reference semantics (Round 2 #6)
 
   auto need_value = [&](int& i) -> const char* {
     if (i + 1 >= argc) return nullptr;
@@ -303,6 +307,17 @@ std::variant<RunConfig, std::string> parse_config(int argc, const char* const* a
       const char* v = need_value(i);
       if (v == nullptr) return std::string{"--margin needs a value"};
       cfg.bounds.margin = static_cast<float>(std::atof(v));
+    } else if (a == "--ep") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--ep needs a value"};
+      const std::string e{v};
+      if (e == "cpu") {
+        cfg.ep = ExecProvider::CpuEp;
+      } else if (e == "cuda") {
+        cfg.ep = ExecProvider::CudaEp;
+      } else {
+        return std::string{"unknown --ep '" + e + "' (cpu|cuda)"};
+      }
     } else if (a == "--out") {
       const char* v = need_value(i);
       if (v == nullptr) return std::string{"--out needs a value"};
@@ -466,6 +481,7 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
 
   rep.mode = cfg.mode;
   rep.bounds = cfg.bounds;
+  rep.ep = cfg.ep;
   rep.ticks_run = cfg.ticks;
   rep.total_seconds = std::chrono::duration<double>(t_end - t_start).count();
   rep.hz = rep.total_seconds > 0.0

@@ -7,6 +7,24 @@ project(omniworld_runtime
 
 find_package(CUDAToolkit QUIET)
 
+# ---------------------------------------------------------------------------
+# Stage C C1: ONNX Runtime is an OPTIONAL dependency. Default OFF keeps the
+# reference build zero-external-dependency (the oracle invariant). When ON,
+# point OW_ONNXRUNTIME_ROOT at an unpacked onnxruntime-win-x64[-gpu]-*.zip;
+# only the real-model adapter files consume it (src/perception/rtdetr.cpp,
+# src/perception/depth_anything.cpp — stages C3/C4). Core modules never
+# include it. L1 sec 3 / L2 C1 sec 3.
+# ---------------------------------------------------------------------------
+option(OW_WITH_ONNXRUNTIME "Enable ONNX Runtime (performance path only)" OFF)
+if(OW_WITH_ONNXRUNTIME)
+  if(NOT DEFINED OW_ONNXRUNTIME_ROOT)
+    message(FATAL_ERROR "OW_WITH_ONNXRUNTIME needs OW_ONNXRUNTIME_ROOT (unzipped onnxruntime-win-x64*-*.zip)")
+  endif()
+  add_compile_definitions(OW_WITH_ONNXRUNTIME=1)
+else()
+  add_compile_definitions(OW_WITH_ONNXRUNTIME=0)
+endif()
+
 # Git commit into build (for the run-report environment metadata; "unknown"
 # when git is unavailable — never blank).
 execute_process(COMMAND git rev-parse --short HEAD
@@ -130,3 +148,4 @@ add_test(NAME ow_slice08 COMMAND ow_tests slice08)
 add_test(NAME ow_slice09 COMMAND ow_tests slice09)
 add_test(NAME ow_slice10 COMMAND ow_tests slice10)
 add_test(NAME ow_slice11 COMMAND ow_tests slice11)
+add_test(NAME ow_slice15 COMMAND ow_tests slice15)

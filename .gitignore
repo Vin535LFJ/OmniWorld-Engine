@@ -20,3 +20,4 @@ CMakeUserPresets.json
 # （cmd 里 nul 是空设备，bash 里不是）。Windows 保留名，删不掉，只能挡在版本控制外。
 nul
 build-rel/
+models/

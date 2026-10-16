@@ -1524,6 +1524,43 @@ int run() {
 
 }  // namespace slice11
 
+namespace slice15 {
+
+void test_parse_ep() {
+  std::string out;
+  const char* argv[] = {"prog", "--ep", "cpu"};
+  const auto a = parse_config(3, argv, out);
+  CHECK(std::holds_alternative<RunConfig>(a));
+  if (std::holds_alternative<RunConfig>(a)) {
+    CHECK(std::get<RunConfig>(a).ep == ExecProvider::CpuEp);
+  }
+  const char* argv2[] = {"prog", "--ep", "cuda"};
+  const auto b = parse_config(3, argv2, out);
+  CHECK(std::holds_alternative<RunConfig>(b));
+  if (std::holds_alternative<RunConfig>(b)) {
+    CHECK(std::get<RunConfig>(b).ep == ExecProvider::CudaEp);
+  }
+  const char* argv3[] = {"prog"};
+  const auto c = parse_config(1, argv3, out);
+  if (std::holds_alternative<RunConfig>(c)) {
+    CHECK(std::get<RunConfig>(c).ep == ExecProvider::CpuEp);  // CLI default
+  }
+  const char* bad[] = {"prog", "--ep", "trt"};
+  CHECK(std::holds_alternative<std::string>(parse_config(3, bad, out)));
+}
+
+int run() {
+  test_parse_ep();
+  if (g_failures == 0) {
+    std::printf("slice15: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice15: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice15
+
 int main(int argc, char** argv) {
   if (argc < 2) {
     std::printf("usage: ow_tests <slice-name>\n");
@@ -1540,6 +1577,7 @@ int main(int argc, char** argv) {
   if (std::strcmp(argv[1], "slice09") == 0) return slice09::run();
   if (std::strcmp(argv[1], "slice10") == 0) return slice10::run();
   if (std::strcmp(argv[1], "slice11") == 0) return slice11::run();
+  if (std::strcmp(argv[1], "slice15") == 0) return slice15::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;
 }
