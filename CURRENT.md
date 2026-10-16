@@ -2,7 +2,7 @@
 
 > 只回答一个问题：**现在做什么。** 背景与全貌见 [`PLAN.md`](PLAN.md)。
 
-**阶段 A 全部切片 ✅ 完成（01–06）：Gate-1 对齐报告已落 `benchmarks/regression/2026-10-14-stage-a-gate1-alignment.md`——(a)(b) PASS、(c) PARTIAL 如实标注。下一步 = SOP-7 阶段收口（retro + 面试素材蒸馏）。**
+**阶段 A 收口完成（W02 全项通过，W00 退出码 0，7/7 测试实跑绿）；阶段 B「双模式框架」L1 共创进行中（Round 1 五问待 owner 裁决）。**
 
 ## 当前状态
 
@@ -15,17 +15,19 @@
 - **切片 06 已完成**（红→绿）：`world_model` 第二接缝（zero_delta / linear_extrapolation 单文件模型）+ `loop` 驱动器（编排 + TickLog + 异常隔离实证）+ `apps/omniworld_loop`；ctest 7/7 绿；Release 38,094 Hz。详见 [L2](docs/design/stage-a-core/slices/06-world-model-seam-gate1-alignment.md) 与 [对齐报告](benchmarks/regression/2026-10-14-stage-a-gate1-alignment.md)。
 - 旧基线（重建对照）：Gate 1 三判据 1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617。
 
-## 下一件事 = SOP-7 阶段收口（阶段 A → 阶段 B）
+## 下一件事 = 阶段 B「双模式框架」L1 共创（Round 1 五问已发，待 owner 裁决）
 
-- 读 [workflow-manual.md SOP-7](docs/agents/workflow-manual.md)：Gate 判据逐条自查（报告已含）→ 差异逐条解释（报告已含）→ **retro**（问题日志 005 与 004 是素材）→ 面试素材蒸馏（一页"系统设计叙事"）。
-- 之后进入**阶段 B 双模式框架**（含报告 Findings F1 per-producer ECE、F2 有界场景修补）。
+- **弹药**：[docs/17-research/2026-10-15-stage-b-l1-briefing.md](docs/17-research/2026-10-15-stage-b-l1-briefing.md)（24 条已确认事实 + 8 个开放问题 + F2 选项权衡）。
+- **节奏**：三轮 grilling 访谈 → L1 落盘 `docs/design/stage-b-dual-mode/概要设计.md`（七节 + 批准痕迹三行）→ owner 逐节批准 → 冻结 → `to-tickets` 拆片。
+- **范围**（L0 §4 阶段 B 行）：ADR-0009 运行层落地（双模式 CLI / 容差比较器 / 延迟计量）+ F1 per-producer ECE + F2 有界场景。
+- **硬门禁**：G-a——无 owner 批准的 L2，不写代码。
 
-- 切片链：01 ✅ 真值心跳 → 02 ✅ 观察生成 → 03 ✅ 感知接缝 → 04 ✅ 裁决与信念账本 → 05 ✅ 指标组 → 06 ✅ 世界模型接缝 + Gate-1 对齐报告（**阶段 A 完成**）。
+- 切片链：01 ✅ 真值心跳 → 02 ✅ 观察生成 → 03 ✅ 感知接缝 → 04 ✅ 裁决与信念账本 → 05 ✅ 指标组 → 06 ✅ 世界模型接缝 + Gate-1 对齐报告（**阶段 A 完成**）→ **阶段 B「双模式框架」：L1 共创中**。
 
-## 出口条件（阶段 A）
+## 出口条件（阶段 B，L0 §4）
 
-Gate-1 对齐报告落 `benchmarks/regression/`：新实现三判据 vs `pre-rebuild` 基线并排，差异逐条解释；全量 ctest 绿 + 参考模式逐字节复现。
+参考模式逐字节不变（全量 ctest 绿）+ 性能模式容差自证（噪声 stub：窗内过、超窗红）。
 
 ## 不碰
 
-双模式框架（阶段 B）、ONNX 真模型（阶段 C）、Vulkan 渲染器（可选技能项目）、Action（契约预留）、付费大算力；**无批准的 L2 不写代码**（PLAN 规则 #6）。
+ONNX 真模型（阶段 C）、Vulkan 渲染器（可选技能项目）、Action（契约预留）、付费大算力；sprint 外新想法进 `docs/17-research/research-queue.md`；**无批准的 L2 不写代码**（PLAN 规则 #6）。
