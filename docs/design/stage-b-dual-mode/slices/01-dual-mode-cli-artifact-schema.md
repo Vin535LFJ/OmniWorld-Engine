@@ -2,7 +2,7 @@
 
 > **设计版本**：v1 · **批准方式**：预授权（owner「推送吧，然后继续开发」指令，2026-10-16；授权范围 = 切片 B1 全部设计点；偏离即停并回报） · **批准日期**：2026-10-16
 > 状态：**已按预授权执行**——票据置 implementing。
-> 上承：[L1 §4 签名](../概要设计.md)（`RunMode` / 工件写入口单一 / 无默认值纪律）；契约依据：ADR-0009（模式开关 + 报告标注）；票据：[.scratch/stage-b-dual-mode/issues/01-dual-mode-cli-artifact-schema.md](../../../.scratch/stage-b-dual-mode/issues/01-dual-mode-cli-artifact-schema.md)。
+> 上承：[L1 §4 签名](../概要设计.md)（`RunMode` / 工件写入口单一 / 无默认值纪律）；契约依据：ADR-0009（模式开关 + 报告标注）；票据：[.scratch/stage-b-dual-mode/issues/01-dual-mode-cli-artifact-schema.md](../../../../../.scratch/stage-b-dual-mode/issues/01-dual-mode-cli-artifact-schema.md)。
 
 ## 1. 程序描述
 

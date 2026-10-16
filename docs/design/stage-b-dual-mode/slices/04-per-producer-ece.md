@@ -2,7 +2,7 @@
 
 > **设计版本**：v1 · **批准方式**：预授权（owner「推送吧，然后继续开发」指令，2026-10-16；授权范围 = 切片 B1–B5；偏离即停并回报） · **批准日期**：2026-10-16
 > 状态：**已按预授权执行**——票据置 implementing。
-> 上承：[L1 §3 Metrics 行 / §4 键约定](../概要设计.md)（聚合键 `"ece"` + 分解键 `"ece:<producer>"`）；教训：problem-log 005 + 手册反模式 #13。契约⑦：置信度唯一消费者 = ECE。票据：[04-per-producer-ece.md](../../../.scratch/stage-b-dual-mode/issues/04-per-producer-ece.md)。
+> 上承：[L1 §3 Metrics 行 / §4 键约定](../概要设计.md)（聚合键 `"ece"` + 分解键 `"ece:<producer>"`）；教训：problem-log 005 + 手册反模式 #13。契约⑦：置信度唯一消费者 = ECE。票据：[04-per-producer-ece.md](../../../../../.scratch/stage-b-dual-mode/issues/04-per-producer-ece.md)。
 
 ## 1. 程序描述
 

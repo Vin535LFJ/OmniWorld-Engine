@@ -2,7 +2,7 @@
 
 > **设计版本**：v1 · **批准方式**：预授权（owner「推送吧，然后继续开发」指令，2026-10-16；授权范围 = 切片 B1–B5 全部设计点；偏离即停并回报） · **批准日期**：2026-10-16
 > 状态：**已按预授权执行**——票据置 implementing。
-> 上承：[L1 §4 签名](../概要设计.md)（`src/tolerance/` 为 loop 私有子件、纯数据进纯数据出）；契约依据：ADR-0009（容差复现机制）；票据：[02-tolerance-comparator-noise-stub.md](../../../.scratch/stage-b-dual-mode/issues/02-tolerance-comparator-noise-stub.md)。
+> 上承：[L1 §4 签名](../概要设计.md)（`src/tolerance/` 为 loop 私有子件、纯数据进纯数据出）；契约依据：ADR-0009（容差复现机制）；票据：[02-tolerance-comparator-noise-stub.md](../../../../../.scratch/stage-b-dual-mode/issues/02-tolerance-comparator-noise-stub.md)。
 
 ## 1. 程序描述
 

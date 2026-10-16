@@ -2,7 +2,7 @@
 
 > **设计版本**：v1 · **批准方式**：预授权（owner「推送吧，然后继续开发」指令，2026-10-16；授权范围 = 切片 B1–B5；偏离即停并回报） · **批准日期**：2026-10-16
 > 状态：**已按预授权执行**——票据置 implementing。
-> 上承：[L1 §4 签名](../概要设计.md)（`StageSamples` / `percentiles()` / 分位数下沉 + 预算断言挂点）；票据：[03-latency-percentiles.md](../../../.scratch/stage-b-dual-mode/issues/03-latency-percentiles.md)。
+> 上承：[L1 §4 签名](../概要设计.md)（`StageSamples` / `percentiles()` / 分位数下沉 + 预算断言挂点）；票据：[03-latency-percentiles.md](../../../../../.scratch/stage-b-dual-mode/issues/03-latency-percentiles.md)。
 
 ## 1. 程序描述
 

@@ -2,7 +2,7 @@
 
 > **设计版本**：v1 · **批准方式**：预授权（owner「推送吧，然后继续开发」指令，2026-10-16；授权范围 = 切片 B1–B5；偏离即停并回报） · **批准日期**：2026-10-16
 > 状态：**已按预授权执行**——票据置 implementing。
-> 上承：[L1 §4 签名 / Round 2 裁决](../概要设计.md)（`bounds(none|wall)` 构造注入、常数边距 0.02、step() 内落点、clamp/不变式测试、边界事件进 TickLog）；契约⑨ 追加字段注释（L0 §2 已同步）。票据：[05-bounded-scene.md](../../../.scratch/stage-b-dual-mode/issues/05-bounded-scene.md)。
+> 上承：[L1 §4 签名 / Round 2 裁决](../概要设计.md)（`bounds(none|wall)` 构造注入、常数边距 0.02、step() 内落点、clamp/不变式测试、边界事件进 TickLog）；契约⑨ 追加字段注释（L0 §2 已同步）。票据：[05-bounded-scene.md](../../../../../.scratch/stage-b-dual-mode/issues/05-bounded-scene.md)。
 
 ## 1. 程序描述
 
