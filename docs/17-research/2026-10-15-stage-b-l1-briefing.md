@@ -3,6 +3,7 @@
 > **声明**：本简报只收事实与选项，一切设计决定由 owner 在阶段 B L1 共创中裁决。
 > **来源与核对**：三路考察（双模式考古 / 契约提炼 / 场景先例）各由考察员产出事实与开放问题，再各由独立复核员逐条核对出处（现行路径用 Read、`pre-rebuild` 用 git show），成立进 confirmed、不成立进 rejected——交付本文时三路 rejected 均为空，本文未采用任何被否决内容。考察规格与流程见本机工作流文件 `.zcode/workflow-drafts/阶段B简报考察.dwf.ts` 与 `.zcode/workflow-runs/dwfrun-3841826f-79a0-471a-9c93-188e22b65632.mjs`（git 忽略、未入库）；三路结果原文由工作流运行期传递，未在仓库内落盘，是否归档见 ⑤Q8。
 > **出处约定**：带 `pre-rebuild:` 前缀 = 仅存在于旧实现 tag（读法 `git show pre-rebuild:<路径>`）；无前缀 = 现行工作树路径。2026-09-28 回归报告与 JSON 工件在现行树 `benchmarks/regression/` 有同路径副本，本文一律引现行树副本。
+> **运行记录（2026-10-16 Q8 裁决补记）**：工作流运行 `dwfrun-3841826f-79a0-471a-9c93-188e22b65632`（三路平行考察 + 链式独立复核）：confirmed 24 / rejected 0、13 个开放问题；全部 confirmed 事实已随本简报 §②③④ 落盘，rejected 为空故无内容需另行归档。8 个开放问题的裁决轨迹见 [`docs/design/stage-b-dual-mode/概要设计.md`](../design/stage-b-dual-mode/概要设计.md) §2。
 
 ## ① 阶段 B 是什么
 
