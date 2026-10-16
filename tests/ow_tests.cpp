@@ -945,6 +945,115 @@ int run() {
 
 }  // namespace slice06
 
+namespace slice07 {
+
+RunConfig mini_cfg() {
+  RunConfig cfg{};
+  cfg.ticks = 8;
+  cfg.seed = 7;
+  cfg.width = 32;
+  cfg.height = 32;
+  cfg.footprint = 0.02f;
+  cfg.perception_adapters = {"blob_detect"};
+  cfg.world_models = {"zero_delta"};
+  cfg.mode = RunMode::Reference;
+  return cfg;
+}
+
+void test_parse_defaults() {
+  const char* argv[] = {"prog"};
+  std::string out;
+  const auto parsed = parse_config(1, argv, out);
+  CHECK(std::holds_alternative<RunConfig>(parsed));
+  if (std::holds_alternative<RunConfig>(parsed)) {  // CLI-layer defaults
+    const RunConfig& c = std::get<RunConfig>(parsed);
+    CHECK(c.mode == RunMode::Reference);
+    CHECK(c.ticks == 2000);
+    CHECK(c.width == 64 && c.height == 64);
+    CHECK(c.footprint == 0.02f);
+    CHECK(c.perception_adapters.size() == 2);
+    CHECK(c.world_models.size() == 2);
+    CHECK(out.empty());
+  }
+}
+
+void test_parse_mode_and_values() {
+  const char* argv[] = {"prog", "--mode", "performance", "--ticks", "100",
+                        "--seed", "9", "--adapters", "blob_detect", "--out", "x.json"};
+  std::string out;
+  const auto parsed = parse_config(11, argv, out);
+  CHECK(std::holds_alternative<RunConfig>(parsed));
+  if (std::holds_alternative<RunConfig>(parsed)) {
+    const RunConfig& c = std::get<RunConfig>(parsed);
+    CHECK(c.mode == RunMode::Performance);
+    CHECK(c.ticks == 100);
+    CHECK(c.seed == 9);
+    CHECK(c.perception_adapters.size() == 1);
+    CHECK(out == "x.json");
+  }
+}
+
+void test_parse_fail_fast() {
+  std::string out;
+  const char* bad_mode[] = {"prog", "--mode", "bogus"};
+  const auto e1 = parse_config(3, bad_mode, out);
+  CHECK(std::holds_alternative<std::string>(e1));
+  if (std::holds_alternative<std::string>(e1)) {
+    CHECK(std::get<std::string>(e1).find("mode") != std::string::npos);
+  }
+  const char* unknown[] = {"prog", "--wat"};
+  const auto e2 = parse_config(2, unknown, out);
+  CHECK(std::holds_alternative<std::string>(e2));
+}
+
+void test_json_mode_and_env_fields() {
+  LoopDriver loop(4);
+  RunReport r = loop.run(mini_cfg());
+  const std::string j = run_report_json(r);
+  CHECK(j.find("\"mode\": \"reference\"") != std::string::npos);
+  CHECK(j.find("\"acceleration\": \"none\"") != std::string::npos);
+  CHECK(j.find("\"os\": \"windows\"") != std::string::npos);
+  CHECK(j.find("\"compiler\": \"MSVC ") != std::string::npos);
+  CHECK(j.find("\"git_commit\": ") != std::string::npos);
+  CHECK(j.find("\"world_hash\": \"") != std::string::npos);
+}
+
+void test_json_is_deterministic() {
+  LoopDriver loop(4);
+  const RunReport r = loop.run(mini_cfg());
+  CHECK(run_report_json(r) == run_report_json(r));  // byte-identical (no wall clock)
+}
+
+void test_modes_share_one_path_v1() {
+  LoopDriver loop(4);
+  const RunReport a = loop.run(mini_cfg());
+  RunConfig perf = mini_cfg();
+  perf.mode = RunMode::Performance;
+  const RunReport b = loop.run(perf);
+  CHECK(a.world_hash == b.world_hash);    // v1: same path, honest labeling
+  CHECK(a.ledger_hash == b.ledger_hash);
+  const std::string jb = run_report_json(b);
+  CHECK(jb.find("\"mode\": \"performance\"") != std::string::npos);
+  CHECK(jb.find("no GPU components yet") != std::string::npos);
+}
+
+int run() {
+  test_parse_defaults();
+  test_parse_mode_and_values();
+  test_parse_fail_fast();
+  test_json_mode_and_env_fields();
+  test_json_is_deterministic();
+  test_modes_share_one_path_v1();
+  if (g_failures == 0) {
+    std::printf("slice07: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice07: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice07
+
 int main(int argc, char** argv) {
   if (argc < 2) {
     std::printf("usage: ow_tests <slice-name>\n");
@@ -956,6 +1065,7 @@ int main(int argc, char** argv) {
   if (std::strcmp(argv[1], "slice04") == 0) return slice04::run();
   if (std::strcmp(argv[1], "slice05") == 0) return slice05::run();
   if (std::strcmp(argv[1], "slice06") == 0) return slice06::run();
+  if (std::strcmp(argv[1], "slice07") == 0) return slice07::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;
 }

@@ -9,9 +9,15 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace ow {
+
+// ADR-0009 mode switch (stage B slice B1): reference stays the byte-exact
+// oracle; performance is the tolerance + latency-budget regime. v1 both run
+// the same code path — the artifact labels the difference honestly.
+enum class RunMode { Reference, Performance };
 
 struct StageLatency {
   double render_ms = 0.0;
@@ -31,11 +37,22 @@ struct TickLog {
 struct RunConfig {
   Tick ticks = 0;
   std::uint64_t seed = 0;
-  int width = 0;   // no defaults: the caller must be explicit
+  int width = 0;   // NO semantic defaults here: the CLI parse layer fills all.
   int height = 0;
   float footprint = 0.0f;
-  std::vector<std::string> perception_adapters;  // registry names
-  std::vector<std::string> world_models;         // registry names
+  std::vector<std::string> perception_adapters;
+  std::vector<std::string> world_models;
+  RunMode mode;  // no default member value; parse_config sets it explicitly
+};
+
+struct EnvironmentMeta {
+  std::string os;
+  std::string arch;
+  std::string compiler;
+  std::string build;
+  std::string git_commit;
+  std::string cpp_standard;
+  std::size_t cpu_logical_cores = 0;
 };
 
 struct RunReport {
@@ -49,6 +66,7 @@ struct RunReport {
   std::size_t applied = 0, announced = 0, rejected = 0;
   StageLatency latency_sum;
   std::size_t adapter_faults = 0;  // caught exceptions (isolation proof)
+  RunMode mode = RunMode::Reference;
 };
 
 class LoopDriver {
@@ -59,5 +77,17 @@ class LoopDriver {
  private:
   int scene_entities_;
 };
+
+// CLI parsing as a library function so it is testable: returns an error string
+// for unknown options or bad values (fail-fast), or the parsed config.
+// artifact_path is set by --out (empty = caller prints text only).
+std::variant<RunConfig, std::string> parse_config(int argc, const char* const* argv,
+                                                  std::string& artifact_path);
+
+EnvironmentMeta collect_environment();
+
+// Deterministic JSON serialization of the run report (no wall clock, no
+// random fields): two calls on the same report are byte-identical.
+std::string run_report_json(const RunReport&);
 
 }  // namespace ow

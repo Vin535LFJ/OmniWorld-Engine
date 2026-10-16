@@ -7,6 +7,17 @@ project(omniworld_runtime
 
 find_package(CUDAToolkit QUIET)
 
+# Git commit into build (for the run-report environment metadata; "unknown"
+# when git is unavailable — never blank).
+execute_process(COMMAND git rev-parse --short HEAD
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  RESULT_VARIABLE OW_GIT_STATUS
+  OUTPUT_VARIABLE OW_GIT_HASH)
+if(NOT OW_GIT_HASH OR NOT OW_GIT_STATUS EQUAL 0)
+  set(OW_GIT_HASH "unknown")
+endif()
+add_compile_definitions(OW_GIT_COMMIT="${OW_GIT_HASH}")
+
 # ---------------------------------------------------------------------------
 # runtime_probe (retained from pre-rebuild): hardware capability probe + smoke
 # benchmark. Self-contained. The engine itself is being co-designed and
@@ -113,3 +124,4 @@ add_test(NAME ow_slice03 COMMAND ow_tests slice03)
 add_test(NAME ow_slice04 COMMAND ow_tests slice04)
 add_test(NAME ow_slice05 COMMAND ow_tests slice05)
 add_test(NAME ow_slice06 COMMAND ow_tests slice06)
+add_test(NAME ow_slice07 COMMAND ow_tests slice07)

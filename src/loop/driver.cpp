@@ -11,9 +11,17 @@
 #include "world_state/world_state.hpp"
 
 #include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <iterator>
 #include <stdexcept>
+#include <string>
+#include <thread>
 #include <utility>
+
+#ifndef OW_GIT_COMMIT
+#define OW_GIT_COMMIT "unknown"
+#endif
 
 namespace ow {
 namespace {
@@ -57,7 +65,225 @@ std::uint64_t hash_ledger(const BeliefLedger& l) {
   return h.result();
 }
 
+std::string quote(std::string s) {
+  std::string out = "\"";
+  for (char c : s) {
+    if (c == '"' || c == '\\') out += '\\';
+    out += c;
+  }
+  out += '"';
+  return out;
+}
+
+std::string to_hex(std::uint64_t v) {
+  char buf[24];
+  std::snprintf(buf, sizeof(buf), "%016llx", static_cast<unsigned long long>(v));
+  return {buf};
+}
+
+std::string num(int v) { return std::to_string(v); }
+
+std::string num(std::uint64_t v) { return std::to_string(v); }
+
+std::string num(double v) {
+  char buf[48];
+  std::snprintf(buf, sizeof(buf), "%.17g", v);
+  return {buf};
+}
+
+std::string list_of_strings(const std::vector<std::string>& xs) {
+  std::string out = "[";
+  for (std::size_t i = 0; i < xs.size(); ++i) {
+    if (i != 0) out += ", ";
+    out += quote(xs[i]);
+  }
+  out += "]";
+  return out;
+}
+
+std::string mode_name(RunMode m) {
+  return m == RunMode::Reference ? "reference" : "performance";
+}
+
 }  // namespace
+
+EnvironmentMeta collect_environment() {
+  EnvironmentMeta e;
+#if defined(_WIN32)
+  e.os = "windows";
+#elif defined(__linux__)
+  e.os = "linux";
+#else
+  e.os = "other";
+#endif
+#if defined(_M_X64) || defined(__x86_64__)
+  e.arch = "x64";
+#else
+  e.arch = "other";
+#endif
+#if defined(_MSC_VER)
+  e.compiler = "MSVC " + std::to_string(_MSC_VER);
+#elif defined(__GNUC__)
+  e.compiler = "GCC " + std::to_string(__GNUC__);
+#else
+  e.compiler = "unknown";
+#endif
+#if defined(_DEBUG)
+  e.build = "debug";
+#elif defined(NDEBUG)
+  e.build = "release";
+#else
+  e.build = "unspecified";
+#endif
+  e.git_commit = OW_GIT_COMMIT;
+  {
+    // _MSVC_LANG is truthful under /std flags; __cplusplus needs /Zc:__cplusplus.
+#if defined(_MSVC_LANG)
+    char buf[16];
+    std::snprintf(buf, sizeof(buf), "%dLL", static_cast<int>(_MSVC_LANG));
+    e.cpp_standard = buf;
+#else
+    e.cpp_standard = std::to_string(static_cast<int>(__cplusplus)) + "LL";
+#endif
+  }
+#if defined(_WIN32)
+  e.cpu_logical_cores = std::thread::hardware_concurrency();
+#else
+  e.cpu_logical_cores = 0;  // unknown on this platform; labeled by 0
+#endif
+  return e;
+}
+
+std::string run_report_json(const RunReport& r) {
+  const EnvironmentMeta env = collect_environment();
+  std::string out;
+  out += "{\n";
+  out += "  \"config\": {\n";
+  out += "    \"mode\": " + quote(mode_name(r.mode)) + "\n";
+  out += "  },\n";
+  out += "  \"environment\": {\n";
+  out += "    \"os\": " + quote(env.os) + ",\n";
+  out += "    \"arch\": " + quote(env.arch) + ",\n";
+  out += "    \"compiler\": " + quote(env.compiler) + ",\n";
+  out += "    \"build\": " + quote(env.build) + ",\n";
+  out += "    \"git_commit\": " + quote(env.git_commit) + ",\n";
+  out += "    \"cpp_standard\": " + quote(env.cpp_standard) + ",\n";
+  out += "    \"cpu_logical_cores\": " + num(env.cpu_logical_cores) + "\n";
+  out += "  },\n";
+  out += "  \"metrics\": {";
+  bool first = true;
+  for (const auto& [k, v] : r.metrics) {
+    out += (first ? "\n" : ",\n");
+    first = false;
+    out += "    " + quote(k) + ": " + num(v);
+  }
+  out += (first ? "" : "\n  ") + std::string("},\n");
+  out += "  \"world_hash\": " + quote(to_hex(r.world_hash)) + ",\n";
+  out += "  \"ledger_hash\": " + quote(to_hex(r.ledger_hash)) + ",\n";
+  out += "  \"ledger_entries\": " + num(r.ledger_entries) + ",\n";
+  out += "  \"applied\": " + num(r.applied) + ",\n";
+  out += "  \"announced\": " + num(r.announced) + ",\n";
+  out += "  \"rejected\": " + num(r.rejected) + ",\n";
+  out += "  \"adapter_faults\": " + num(r.adapter_faults) + ",\n";
+  out += "  \"mode\": " + quote(mode_name(r.mode)) + ",\n";
+  out += "  \"acceleration\": " +
+         quote(r.mode == RunMode::Performance
+                   ? std::string("none (v1: no GPU components yet)")
+                   : std::string("none")) + "\n";
+  out += "}\n";
+  return out;
+}
+
+std::variant<RunConfig, std::string> parse_config(int argc, const char* const* argv,
+                                                  std::string& artifact_path) {
+  RunConfig cfg;
+  artifact_path.clear();
+  // CLI-layer defaults: the ONLY place defaults are allowed (L1 sec 6).
+  cfg.ticks = 2000;
+  cfg.seed = 7;
+  cfg.width = 64;
+  cfg.height = 64;
+  cfg.footprint = 0.02f;
+  cfg.perception_adapters = {"blob_detect", "blob_detect_overconfident"};
+  cfg.world_models = {"zero_delta", "linear_extrapolation"};
+  cfg.mode = RunMode::Reference;
+
+  auto need_value = [&](int& i) -> const char* {
+    if (i + 1 >= argc) return nullptr;
+    return argv[++i];
+  };
+
+  for (int i = 1; i < argc; ++i) {
+    const std::string a = argv[i];
+    if (a == "--ticks") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--ticks needs a value"};
+      cfg.ticks = static_cast<Tick>(std::strtoull(v, nullptr, 10));
+    } else if (a == "--seed") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--seed needs a value"};
+      cfg.seed = std::strtoull(v, nullptr, 10);
+    } else if (a == "--width") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--width needs a value"};
+      cfg.width = std::atoi(v);
+    } else if (a == "--height") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--height needs a value"};
+      cfg.height = std::atoi(v);
+    } else if (a == "--footprint") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--footprint needs a value"};
+      cfg.footprint = static_cast<float>(std::atof(v));
+    } else if (a == "--adapters") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--adapters needs a value"};
+      cfg.perception_adapters.clear();
+      std::string cur;
+      for (const char* p = v; *p != '\0'; ++p) {
+        if (*p == ',') {
+          if (!cur.empty()) cfg.perception_adapters.push_back(cur);
+          cur.clear();
+        } else {
+          cur.push_back(*p);
+        }
+      }
+      if (!cur.empty()) cfg.perception_adapters.push_back(cur);
+    } else if (a == "--models") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--models needs a value"};
+      cfg.world_models.clear();
+      std::string cur;
+      for (const char* p = v; *p != '\0'; ++p) {
+        if (*p == ',') {
+          if (!cur.empty()) cfg.world_models.push_back(cur);
+          cur.clear();
+        } else {
+          cur.push_back(*p);
+        }
+      }
+      if (!cur.empty()) cfg.world_models.push_back(cur);
+    } else if (a == "--mode") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--mode needs a value"};
+      const std::string m{v};
+      if (m == "reference") {
+        cfg.mode = RunMode::Reference;
+      } else if (m == "performance") {
+        cfg.mode = RunMode::Performance;
+      } else {
+        return std::string{"unknown --mode '" + m + "' (reference|performance)"};
+      }
+    } else if (a == "--out") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--out needs a value"};
+      artifact_path = v;
+    } else {
+      return std::string{"unknown option '" + a + "'"};
+    }
+  }
+  return cfg;
+}
 
 RunReport LoopDriver::run(const RunConfig& cfg) {
   RunReport rep;
@@ -150,6 +376,7 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
   }
   const auto t_end = SteadyClock::now();
 
+  rep.mode = cfg.mode;
   rep.ticks_run = cfg.ticks;
   rep.total_seconds = std::chrono::duration<double>(t_end - t_start).count();
   rep.hz = rep.total_seconds > 0.0
