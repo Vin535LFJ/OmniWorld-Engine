@@ -1318,6 +1318,90 @@ int run() {
 
 }  // namespace slice09
 
+namespace slice10 {
+
+BeliefEntry ece_entry(const char* producer, EntityId target_id, double x,
+                      double z, float conf, Tick t) {
+  Proposal p;
+  p.producer = producer;
+  p.tick_observed = t;
+  p.target = target_id;
+  Transform tr;
+  tr.position = Vec3{static_cast<float>(x), 0.0f, static_cast<float>(z)};
+  p.fields.transform = tr;
+  p.confidence = conf;
+  return BeliefEntry{std::move(p),
+                     AdjudicationResult{VerdictKind::Matched, target_id, {}}, t};
+}
+
+// Feed n proposals: `correct_first` right (position = truth) then the rest
+// wrong (position = truth + 0.5 on x, beyond the 0.1 correctness bar).
+void feed_pattern(MetricsModule& m, const WorldState& ws, const char* producer,
+                  int correct_first, int wrong_after, float conf) {
+  BeliefLedger l;
+  for (int i = 0; i < correct_first; ++i) {
+    l.record(ece_entry(producer, 1, 0.5, 0.5, conf, 1));
+  }
+  for (int i = 0; i < wrong_after; ++i) {
+    l.record(ece_entry(producer, 1, 1.0, 0.5, conf, 1));
+  }
+  m.feed(ws, l, 1);
+}
+
+void test_decomposed_exact_values() {
+  TruthWorld tw(1);
+  WorldState ws;
+  tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
+           Vec3{});
+
+  MetricsModule m;  // two producers, same accuracy structure, different claims
+  feed_pattern(m, ws, "honest", 7, 1, 0.875f);   // conf == accuracy
+  feed_pattern(m, ws, "loud", 7, 1, 1.0f);       // overclaims the same errors
+
+  const auto r = m.report();
+  CHECK(r.count("ece") == 1);
+  CHECK(r.count("ece:honest") == 1);
+  CHECK(r.count("ece:loud") == 1);
+  CHECK(r.at("ece:honest") == 0.0);    // calibrated: exact zero
+  CHECK(r.at("ece:loud") == 0.125);    // |7/8 - 1.0|, exact
+  CHECK(r.at("ece") == 0.0625);        // (0 + 0.125) / 2, equal counts
+}
+
+void test_aggregate_between_decomposed() {
+  LoopDriver loop(4);
+  RunConfig cfg{};
+  cfg.ticks = 30;
+  cfg.seed = 42;
+  cfg.width = 64;
+  cfg.height = 64;
+  cfg.footprint = 0.02f;
+  cfg.perception_adapters = {"blob_detect", "blob_detect_overconfident"};
+  cfg.world_models = {};  // perception-only: the aggregate then sits between the two detectors
+  cfg.mode = RunMode::Reference;
+  const auto r = loop.run(cfg).metrics;
+  CHECK(r.count("ece") == 1);
+  CHECK(r.count("ece:blob_detect") == 1);
+  CHECK(r.count("ece:blob_detect_overconfident") == 1);
+  const double hi = r.at("ece:blob_detect");
+  const double lo = r.at("ece:blob_detect_overconfident");
+  const double agg = r.at("ece");
+  CHECK(hi > lo + 0.05);  // honest detector under-claims vs over-claiming one
+  CHECK(agg >= lo && agg <= hi);  // aggregate stays inside the decomposed range
+}
+
+int run() {
+  test_decomposed_exact_values();
+  test_aggregate_between_decomposed();
+  if (g_failures == 0) {
+    std::printf("slice10: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice10: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice10
+
 int main(int argc, char** argv) {
   if (argc < 2) {
     std::printf("usage: ow_tests <slice-name>\n");
@@ -1332,6 +1416,7 @@ int main(int argc, char** argv) {
   if (std::strcmp(argv[1], "slice07") == 0) return slice07::run();
   if (std::strcmp(argv[1], "slice08") == 0) return slice08::run();
   if (std::strcmp(argv[1], "slice09") == 0) return slice09::run();
+  if (std::strcmp(argv[1], "slice10") == 0) return slice10::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;
 }

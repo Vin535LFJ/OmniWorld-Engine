@@ -1,7 +1,9 @@
 #include "metrics/metrics.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <map>
 
 namespace ow {
 namespace {
@@ -49,23 +51,38 @@ class EceMetric final : public Metric {
     for (const BeliefEntry* e : l.at(t)) {
       const float c = e->proposal.confidence;
       const int bin = std::min(9, static_cast<int>(std::floor(c * 10.0f)));
-      bins_[bin].n += 1.0;
-      bins_[bin].conf_sum += static_cast<double>(c);
+      Bin& b = bins_[e->proposal.producer][bin];  // producer-keyed rows
+      b.n += 1.0;
+      b.conf_sum += static_cast<double>(c);
       double err = 0.0;
       const bool correct = matched_error(*e, ws, err) &&
                            err <= static_cast<double>(kCorrectTol);
-      if (correct) bins_[bin].correct += 1.0;
+      if (correct) b.correct += 1.0;
     }
   }
   double value() const override {
     double total = 0.0;
-    for (const Bin& b : bins_) total += b.n;
-    if (total == 0.0) return 0.0;
     double ece = 0.0;
-    for (const Bin& b : bins_) {
-      if (b.n > 0.0) ece += std::abs(b.correct - b.conf_sum) / total;
+    for (const auto& [producer, bs] : bins_) {
+      for (const Bin& b : bs) {
+        total += b.n;
+        ece += std::abs(b.correct - b.conf_sum);
+      }
     }
-    return ece;
+    return total > 0.0 ? ece / total : 0.0;
+  }
+  // Aggregate key "ece" plus one decomposed key per producer ("ece:<name>").
+  void collect(std::map<std::string, double>& out) const override {
+    out["ece"] = value();
+    for (const auto& [producer, bs] : bins_) {  // map order = deterministic
+      double n = 0.0;
+      double ece = 0.0;
+      for (const Bin& b : bs) {
+        n += b.n;
+        ece += std::abs(b.correct - b.conf_sum);
+      }
+      if (n > 0.0) out["ece:" + producer] = ece / n;
+    }
   }
 
  private:
@@ -74,7 +91,7 @@ class EceMetric final : public Metric {
     double conf_sum = 0.0;
     double correct = 0.0;
   };
-  Bin bins_[10];
+  std::map<std::string, std::array<Bin, 10>> bins_;
 };
 
 class IdentityStabilityMetric final : public Metric {
@@ -125,7 +142,7 @@ void MetricsModule::feed(const WorldState& ws, const BeliefLedger& l, Tick t) {
 
 std::map<std::string, double> MetricsModule::report() const {
   std::map<std::string, double> out;
-  for (const auto& m : metrics_) out[m->name()] = m->value();
+  for (const auto& m : metrics_) m->collect(out);
   return out;
 }
 
