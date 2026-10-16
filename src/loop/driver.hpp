@@ -19,6 +19,15 @@ namespace ow {
 // the same code path — the artifact labels the difference honestly.
 enum class RunMode { Reference, Performance };
 
+// Per-tick microsecond samples keyed by stage (raw evidence kept; p50/p95 is
+// computed on top with the pre-rebuild runner's rank-linear interpolation).
+using StageSamples = std::map<std::string, std::vector<double>>;
+
+struct Percentiles {
+  double p50 = 0.0;
+  double p95 = 0.0;
+};
+
 struct StageLatency {
   double render_ms = 0.0;
   double perceive_ms = 0.0;
@@ -67,6 +76,10 @@ struct RunReport {
   StageLatency latency_sum;
   std::size_t adapter_faults = 0;  // caught exceptions (isolation proof)
   RunMode mode = RunMode::Reference;
+  // B3: raw per-stage microsecond samples + percentiles. Diagnostic only:
+  // they never enter world_hash / ledger_hash.
+  StageSamples stage_samples;
+  std::map<std::string, Percentiles> stage_percentiles;
 };
 
 class LoopDriver {
@@ -89,5 +102,13 @@ EnvironmentMeta collect_environment();
 // Deterministic JSON serialization of the run report (no wall clock, no
 // random fields): two calls on the same report are byte-identical.
 std::string run_report_json(const RunReport&);
+
+// Percentiles per stage (rank-linear interpolation, pre-rebuild runner
+// 口径); empty samples report 0. Sorted by map key = deterministic.
+std::map<std::string, Percentiles> percentiles(const StageSamples&);
+
+// Flat "<stage>.p50"/"<stage>.p95" keys for latency-budget windows (the
+// budget mount point consumed with the tolerance comparator).
+std::map<std::string, double> latency_keys(const RunReport&);
 
 }  // namespace ow

@@ -10,7 +10,9 @@
 #include "world_model/world_model.hpp"
 #include "world_state/world_state.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <iterator>
@@ -27,10 +29,6 @@ namespace ow {
 namespace {
 
 using SteadyClock = std::chrono::steady_clock;
-
-double ms_between(SteadyClock::time_point a, SteadyClock::time_point b) {
-  return std::chrono::duration<double, std::milli>(b - a).count();
-}
 
 std::uint64_t hash_world(const WorldState& ws) {
   Hasher h;
@@ -178,6 +176,15 @@ std::string run_report_json(const RunReport& r) {
     out += "    " + quote(k) + ": " + num(v);
   }
   out += (first ? "" : "\n  ") + std::string("},\n");
+  out += "  \"stage_percentiles\": {";
+  first = true;
+  for (const auto& [stage, p] : r.stage_percentiles) {
+    out += (first ? "\n" : ",\n");
+    first = false;
+    out += "    " + quote(stage) + ": {\"p50\": " + num(p.p50) +
+           ", \"p95\": " + num(p.p95) + "}";
+  }
+  out += (first ? "" : "\n  ") + std::string("},\n");
   out += "  \"world_hash\": " + quote(to_hex(r.world_hash)) + ",\n";
   out += "  \"ledger_hash\": " + quote(to_hex(r.ledger_hash)) + ",\n";
   out += "  \"ledger_entries\": " + num(r.ledger_entries) + ",\n";
@@ -285,6 +292,38 @@ std::variant<RunConfig, std::string> parse_config(int argc, const char* const* a
   return cfg;
 }
 
+std::map<std::string, Percentiles> percentiles(const StageSamples& samples) {
+  std::map<std::string, Percentiles> out;
+  for (const auto& [stage, xs] : samples) {  // map order = deterministic
+    Percentiles p;
+    if (!xs.empty()) {
+      std::vector<double> s = xs;
+      std::sort(s.begin(), s.end());
+      const auto at = [&](double q) -> double {
+        if (s.size() == 1) return s[0];
+        const double rank = q * static_cast<double>(s.size() - 1);
+        const std::size_t lo = static_cast<std::size_t>(std::floor(rank));
+        const double frac = rank - static_cast<double>(lo);
+        if (lo + 1 >= s.size()) return s[lo];
+        return s[lo] + frac * (s[lo + 1] - s[lo]);
+      };
+      p.p50 = at(0.5);
+      p.p95 = at(0.95);
+    }
+    out[stage] = p;
+  }
+  return out;
+}
+
+std::map<std::string, double> latency_keys(const RunReport& r) {
+  std::map<std::string, double> out;
+  for (const auto& [stage, p] : r.stage_percentiles) {
+    out[stage + ".p50"] = p.p50;
+    out[stage + ".p95"] = p.p95;
+  }
+  return out;
+}
+
 RunReport LoopDriver::run(const RunConfig& cfg) {
   RunReport rep;
 
@@ -316,6 +355,10 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
   }
 
   StageLatency lat_sum;
+  StageSamples samples;  // per-tick microseconds keyed by stage (raw evidence)
+  const auto us = [](SteadyClock::time_point a, SteadyClock::time_point b) {
+    return std::chrono::duration<double, std::micro>(b - a).count();
+  };
   const auto t_start = SteadyClock::now();
   for (Tick t = 1; t <= cfg.ticks; ++t) {
     TickLog log;
@@ -323,11 +366,15 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
 
     const auto s0 = SteadyClock::now();
     truth.advance(ws, t);
-    const Observation obs = gen.render(ws, t, rcfg, Transform{});
     const auto s1 = SteadyClock::now();
+    const Observation obs = gen.render(ws, t, rcfg, Transform{});
+    const auto s2 = SteadyClock::now();
+    samples["truth_step"].push_back(us(s0, s1));
+    samples["render"].push_back(us(s1, s2));
 
     std::vector<Proposal> proposals;
     for (auto& a : perceivers) {
+      const auto ta = SteadyClock::now();
       try {  // isolation (slice 03 AC): a faulting adapter never halts ticks
         auto ps = a->observe(obs);
         proposals.insert(proposals.end(), std::make_move_iterator(ps.begin()),
@@ -335,8 +382,11 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
       } catch (...) {
         ++rep.adapter_faults;
       }
+      const auto tb = SteadyClock::now();
+      samples[std::string("detect:") + a->name()].push_back(us(ta, tb));
     }
     for (auto& m : models) {
+      const auto tm = SteadyClock::now();
       try {
         auto ps = m->predict(t, ws);
         proposals.insert(proposals.end(), std::make_move_iterator(ps.begin()),
@@ -344,8 +394,10 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
       } catch (...) {
         ++rep.adapter_faults;
       }
+      const auto tn = SteadyClock::now();
+      samples[std::string("predict:") + m->name()].push_back(us(tm, tn));
     }
-    const auto s2 = SteadyClock::now();
+    const auto s3 = SteadyClock::now();
 
     for (const Proposal& p : proposals) {
       const AdjudicationResult v = strategy.resolve(p, ws);
@@ -356,15 +408,19 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
       }
       ledger.record(BeliefEntry{p, v, t});
     }
-    const auto s3 = SteadyClock::now();
-
-    metrics.feed(ws, ledger, t);
     const auto s4 = SteadyClock::now();
 
-    log.latency.render_ms = ms_between(s0, s1);
-    log.latency.perceive_ms = ms_between(s1, s2);
-    log.latency.adjudicate_ms = ms_between(s2, s3);
-    log.latency.metrics_ms = ms_between(s3, s4);
+    metrics.feed(ws, ledger, t);
+    const auto s5 = SteadyClock::now();
+    samples["adjudicate"].push_back(us(s3, s4));
+    samples["metrics"].push_back(us(s4, s5));
+
+    // StageLatency (4 coarse segments) is derived from the fine samples;
+    // nothing is instrumented twice.
+    log.latency.render_ms = (us(s0, s2)) / 1000.0;
+    log.latency.perceive_ms = us(s2, s3) / 1000.0;
+    log.latency.adjudicate_ms = us(s3, s4) / 1000.0;
+    log.latency.metrics_ms = us(s4, s5) / 1000.0;
     lat_sum.render_ms += log.latency.render_ms;
     lat_sum.perceive_ms += log.latency.perceive_ms;
     lat_sum.adjudicate_ms += log.latency.adjudicate_ms;
@@ -375,6 +431,9 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
     rep.rejected += log.rejected;
   }
   const auto t_end = SteadyClock::now();
+
+  rep.stage_samples = samples;
+  rep.stage_percentiles = percentiles(samples);
 
   rep.mode = cfg.mode;
   rep.ticks_run = cfg.ticks;

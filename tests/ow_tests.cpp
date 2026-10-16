@@ -1219,6 +1219,105 @@ int run() {
 
 }  // namespace slice08
 
+namespace slice09 {
+
+void test_percentile_known_samples() {
+  const StageSamples s{{"x", {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}}};
+  const auto p = percentiles(s);
+  CHECK(p.count("x") == 1);
+  CHECK(p.at("x").p50 == 5.5);  // rank 4.5 -> exact
+  // Rank-linear interpolation written out so the double matches bit-for-bit.
+  CHECK(p.at("x").p95 == 9.0 + (0.95 * 9.0 - 8.0) * (10.0 - 9.0));
+  const StageSamples one{{"y", {2.5}}};
+  const auto p1 = percentiles(one);
+  CHECK(p1.at("y").p50 == 2.5);
+  CHECK(p1.at("y").p95 == 2.5);  // single sample: the value itself
+  const StageSamples none{{"z", {}}};
+  const auto p0 = percentiles(none);
+  CHECK(p0.at("z").p50 == 0.0);
+  CHECK(p0.at("z").p95 == 0.0);
+}
+
+RunConfig lat_cfg() {
+  RunConfig cfg{};
+  cfg.ticks = 20;
+  cfg.seed = 42;
+  cfg.width = 64;
+  cfg.height = 64;
+  cfg.footprint = 0.02f;
+  cfg.perception_adapters = {"blob_detect"};
+  cfg.world_models = {"linear_extrapolation"};
+  cfg.mode = RunMode::Reference;
+  return cfg;
+}
+
+void test_samples_and_keys() {
+  LoopDriver loop(4);
+  const RunReport r = loop.run(lat_cfg());
+  CHECK(r.stage_samples.count("truth_step") == 1);
+  CHECK(r.stage_samples.count("render") == 1);
+  CHECK(r.stage_samples.count("detect:blob_detect") == 1);
+  CHECK(r.stage_samples.count("predict:linear_extrapolation") == 1);
+  CHECK(r.stage_samples.count("adjudicate") == 1);
+  CHECK(r.stage_samples.count("metrics") == 1);
+  for (const auto& [k, v] : r.stage_samples) {
+    CHECK(v.size() == static_cast<std::size_t>(20));  // one sample per tick
+  }
+  CHECK(r.stage_percentiles.size() == r.stage_samples.size());
+  const auto keys = latency_keys(r);
+  CHECK(keys.count("render.p50") == 1);
+  CHECK(keys.count("detect:blob_detect.p95") == 1);
+}
+
+void test_budget_mount() {
+  LoopDriver loop(4);
+  const RunReport r = loop.run(lat_cfg());
+  const auto keys = latency_keys(r);
+  // Note: truth_step (one advance of 8 entities) often measures 0.0us at this
+  // machine's timer resolution — a heavy stage demonstrates the mount instead.
+  const double v = keys.at("render.p50");
+  CHECK(v > 0.0);  // filling a 64x64 frame costs real microseconds
+  // Budget semantics: compare the report's keys against a declared budget map.
+  const std::map<std::string, double> budget{{"render.p50", v}};
+  const std::vector<ToleranceWindow> generous{{"render.p50", v}};
+  CHECK(compare_within_tolerance(keys, budget, generous).pass);  // delta 0
+  const std::map<std::string, double> zero_budget{{"render.p50", 0.0}};
+  const std::vector<ToleranceWindow> zero{{"render.p50", 0.0}};
+  CHECK(!compare_within_tolerance(keys, zero_budget, zero).pass);  // v > 0
+  const std::vector<ToleranceWindow> ghost{{"nope", 1.0}};
+  const auto vm = compare_within_tolerance(keys, keys, ghost);
+  CHECK(!vm.pass);
+  CHECK(vm.deltas[0].second == kMissingDelta);
+}
+
+void test_json_and_wallclock_regression() {
+  LoopDriver loop(4);
+  const RunReport a = loop.run(lat_cfg());
+  const RunReport b = loop.run(lat_cfg());
+  CHECK(a.world_hash == b.world_hash);    // timing never leaks into hashes
+  CHECK(a.ledger_hash == b.ledger_hash);
+  const std::string j = run_report_json(a);
+  CHECK(j.find("\"stage_percentiles\"") != std::string::npos);
+  CHECK(j.find("\"render\"") != std::string::npos);
+  CHECK(j.find("\"p50\"") != std::string::npos);
+  CHECK(run_report_json(a) == run_report_json(a));  // same report: byte-identical
+}
+
+int run() {
+  test_percentile_known_samples();
+  test_samples_and_keys();
+  test_budget_mount();
+  test_json_and_wallclock_regression();
+  if (g_failures == 0) {
+    std::printf("slice09: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice09: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice09
+
 int main(int argc, char** argv) {
   if (argc < 2) {
     std::printf("usage: ow_tests <slice-name>\n");
@@ -1232,6 +1331,7 @@ int main(int argc, char** argv) {
   if (std::strcmp(argv[1], "slice06") == 0) return slice06::run();
   if (std::strcmp(argv[1], "slice07") == 0) return slice07::run();
   if (std::strcmp(argv[1], "slice08") == 0) return slice08::run();
+  if (std::strcmp(argv[1], "slice09") == 0) return slice09::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;
 }
