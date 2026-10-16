@@ -2,7 +2,7 @@
 
 > 只回答一个问题：**现在做什么。** 背景与全貌见 [`PLAN.md`](PLAN.md)。
 
-**阶段 A 收口完成（W02 全项通过，W00 退出码 0，7/7 测试实跑绿）；阶段 B「双模式框架」L1 共创进行中（Round 1 五问待 owner 裁决）。**
+**阶段 B L1 已冻结（owner 三轮共创）；spec + 5 张切片票已发布；下一张 = B1「双模式 CLI + 工件 schema」。**
 
 ## 当前状态
 
@@ -13,16 +13,19 @@
 - **切片 04 已完成**（红→绿）：`adjudication`（可替换关联策略：最近位置+容差+等距取先）+ `belief` 追加式账本（携裁决结果留痕）；ctest 5/5 绿。详见 [L2](docs/design/stage-a-core/slices/04-adjudication-belief-ledger.md)。
 - **切片 05 已完成**（红→绿）：`metrics` 深模块（divergence / ECE / 身份稳定性，指标可插拔注册；ECE 判别分离 0 vs 0.125 精确值）；ctest 6/6 绿。详见 [L2](docs/design/stage-a-core/slices/05-metrics-suite.md)。
 - **切片 06 已完成**（红→绿）：`world_model` 第二接缝（zero_delta / linear_extrapolation 单文件模型）+ `loop` 驱动器（编排 + TickLog + 异常隔离实证）+ `apps/omniworld_loop`；ctest 7/7 绿；Release 38,094 Hz。详见 [L2](docs/design/stage-a-core/slices/06-world-model-seam-gate1-alignment.md) 与 [对齐报告](benchmarks/regression/2026-10-14-stage-a-gate1-alignment.md)。
+- **阶段 B L1 已冻结**（2026-10-16，三轮共创）：`docs/design/stage-b-dual-mode/概要设计.md`；双模式 CLI/容差比较器/延迟计量 + F1 + F2 五切片就绪。
 - 旧基线（重建对照）：Gate 1 三判据 1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617。
 
-## 下一件事 = 阶段 B「双模式框架」L1 共创（Round 1 五问已发，待 owner 裁决）
+## 下一件事 = 领取切片 B1
 
-- **弹药**：[docs/17-research/2026-10-15-stage-b-l1-briefing.md](docs/17-research/2026-10-15-stage-b-l1-briefing.md)（24 条已确认事实 + 8 个开放问题 + F2 选项权衡）。
-- **节奏**：三轮 grilling 访谈 → L1 落盘 `docs/design/stage-b-dual-mode/概要设计.md`（七节 + 批准痕迹三行）→ owner 逐节批准 → 冻结 → `to-tickets` 拆片。
-- **范围**（L0 §4 阶段 B 行）：ADR-0009 运行层落地（双模式 CLI / 容差比较器 / 延迟计量）+ F1 per-producer ECE + F2 有界场景。
-- **硬门禁**：G-a——无 owner 批准的 L2，不写代码。
+- **票据：[`.scratch/stage-b-dual-mode/issues/01-dual-mode-cli-artifact-schema.md`](.scratch/stage-b-dual-mode/issues/01-dual-mode-cli-artifact-schema.md)**（无阻塞，可立即开始）
+- 流程：新开一个 session，粘入这段话即可——
 
-- 切片链：01 ✅ 真值心跳 → 02 ✅ 观察生成 → 03 ✅ 感知接缝 → 04 ✅ 裁决与信念账本 → 05 ✅ 指标组 → 06 ✅ 世界模型接缝 + Gate-1 对齐报告（**阶段 A 完成**）→ **阶段 B「双模式框架」：L1 共创中**。
+  > 实现 .scratch/stage-b-dual-mode/issues/01-dual-mode-cli-artifact-schema.md——先读 spec（`.scratch/stage-b-dual-mode/spec.md`）与 L1（`docs/design/stage-b-dual-mode/概要设计.md`）及既有代码，产出该切片的 L2 详细设计给我批准，批准后 TDD 实现。
+
+- 切片链：B1 双模式 CLI + 工件 schema → B2 容差比较器 + 噪声 stub → B3 延迟计量 + 分位数下沉 → B4 per-producer ECE（F1）→ B5 有界场景（F2，出口 = 阶段 B 完成）。
+
+- 切片链：01 ✅ 真值心跳 → 02 ✅ 观察生成 → 03 ✅ 感知接缝 → 04 ✅ 裁决与信念账本 → 05 ✅ 指标组 → 06 ✅ 世界模型接缝 + Gate-1 对齐报告（**阶段 A 完成**）→ **阶段 B：L1 已冻结，切片 B1–B5 就绪**。
 
 ## 出口条件（阶段 B，L0 §4）
 
