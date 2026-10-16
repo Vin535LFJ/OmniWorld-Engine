@@ -6,12 +6,14 @@
 #include "belief/ledger.hpp"
 #include "loop/driver.hpp"
 #include "metrics/metrics.hpp"
+#include "tolerance/tolerance.hpp"
 #include "observation/observation.hpp"
 #include "perception/adapter.hpp"
 #include "truth_world/truth_world.hpp"
 #include "world_model/world_model.hpp"
 #include "world_state/world_state.hpp"
 
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -1054,6 +1056,169 @@ int run() {
 
 }  // namespace slice07
 
+namespace slice08 {
+
+// Test-local noise stub: a world-model adapter with a parameterized x-axis
+// offset (precedent: slice04 AlwaysReject / slice06 ThrowingPerception — it
+// never enters src/, it is the tolerance window's own proof instrument).
+struct NoisyPredictor final : WorldModelAdapter {
+  explicit NoisyPredictor(float eps) : eps_(eps) {}
+  const char* name() const override { return "noise_stub"; }
+  std::vector<Proposal> predict(Tick t, const WorldState& ws) override {
+    std::vector<Proposal> out;
+    for (const Entity& e : ws.entities()) {
+      Proposal p;
+      p.producer = "noise_stub";
+      p.tick_observed = t;
+      p.target = e.id;
+      Transform tr;
+      tr.position = Vec3{e.transform.position.x + eps_,
+                         e.transform.position.y,
+                         e.transform.position.z};
+      p.fields.transform = tr;
+      p.confidence = 0.5f;
+      out.push_back(std::move(p));
+    }
+    return out;
+  }
+
+ private:
+  float eps_;
+};
+
+float kEpsSmall = 0.02f;
+float kEpsBig = 0.2f;
+double kDivTol = 0.05;  // calibrated once against the real deltas below
+
+void test_comparator_pure_function() {
+  const std::map<std::string, double> a{{"divergence", 0.1}, {"ece", 0.2}};
+  const std::map<std::string, double> b{{"divergence", 0.11}, {"ece", 0.2}};
+  const std::vector<ToleranceWindow> w{{"divergence", 0.02}, {"ece", 0.02}};
+  const ToleranceVerdict v = compare_within_tolerance(a, b, w);
+  CHECK(v.pass);
+  CHECK(v.deltas.size() == 2);
+  CHECK(v.deltas[0].first == "divergence");
+  CHECK(v.deltas[0].second == 0.11 - 0.1);  // same expression, same double
+  CHECK(v.deltas[1].second == 0.0);
+
+  // Boundary: delta exactly == window passes (binary-exact values).
+  const std::map<std::string, double> c{{"d", 0.25}};
+  const std::map<std::string, double> d{{"d", 0.5}};
+  const ToleranceVerdict vb =
+      compare_within_tolerance(c, d, {{"d", 0.25}});
+  CHECK(vb.pass);
+
+  // Missing key: sentinel -1.0 and fail.
+  const std::map<std::string, double> e{{"other", 1.0}};
+  const ToleranceVerdict vm = compare_within_tolerance(c, e, {{"d", 1.0}});
+  CHECK(!vm.pass);
+  CHECK(vm.deltas[0].second == kMissingDelta);
+
+  // Empty windows: nothing to compare.
+  const ToleranceVerdict ve = compare_within_tolerance(a, b, {});
+  CHECK(ve.pass);
+  CHECK(ve.deltas.empty());
+
+  // NaN metric values fail their window without a special case.
+  const std::map<std::string, double> n{{"d", std::nan("")}};
+  const ToleranceVerdict vn =
+      compare_within_tolerance(c, n, {{"d", 1.0}});
+  CHECK(!vn.pass);
+}
+
+void test_stub_registration() {
+  CHECK(world_model::make("noise_stub_small") != nullptr);
+  CHECK(world_model::make("noise_stub_big") != nullptr);
+  auto small = world_model::make("noise_stub_small");
+  TruthWorld tw(1);
+  WorldState ws;
+  tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
+           Vec3{});
+  const auto ps = small->predict(3, ws);
+  CHECK(ps.size() == 1);
+  if (!ps.empty()) {
+    CHECK(ps[0].producer == "noise_stub");
+    CHECK(ps[0].fields.transform->position.x ==
+          0.5f + kEpsSmall);  // offset visible
+  }
+}
+
+RunConfig tolerance_cfg() {
+  RunConfig cfg{};
+  cfg.ticks = 50;
+  cfg.seed = 42;
+  cfg.width = 64;
+  cfg.height = 64;
+  cfg.footprint = 0.02f;
+  cfg.perception_adapters = {};  // mechanism isolation: no perception noise
+  cfg.world_models = {"zero_delta"};
+  cfg.mode = RunMode::Reference;
+  return cfg;
+}
+
+void test_self_proof_both_directions() {
+  LoopDriver loop(8);
+  const RunReport base = loop.run(tolerance_cfg());
+
+  RunConfig small = tolerance_cfg();
+  small.world_models = {"noise_stub_small"};
+  const RunReport rs = loop.run(small);
+
+  RunConfig big = tolerance_cfg();
+  big.world_models = {"noise_stub_big"};
+  const RunReport rb = loop.run(big);
+
+  const std::vector<ToleranceWindow> window{{"divergence", kDivTol}};
+  const ToleranceVerdict within =
+      compare_within_tolerance(base.metrics, rs.metrics, window);
+  CHECK(within.pass);  // small noise: inside the declared window
+
+  const ToleranceVerdict beyond =
+      compare_within_tolerance(base.metrics, rb.metrics, window);
+  CHECK(!beyond.pass);  // big noise: outside, and the deltas say why
+  CHECK(!beyond.deltas.empty());
+  CHECK(beyond.deltas[0].first == "divergence");
+  CHECK(beyond.deltas[0].second > kDivTol);
+}
+
+void test_determinism_pairing() {
+  const std::map<std::string, double> a{{"d", 0.1}};
+  const std::map<std::string, double> b{{"d", 0.11}};
+  const std::vector<ToleranceWindow> w{{"d", 0.02}};
+  const ToleranceVerdict v1 = compare_within_tolerance(a, b, w);
+  const ToleranceVerdict v2 = compare_within_tolerance(a, b, w);
+  CHECK(v1.pass == v2.pass && v1.deltas == v2.deltas);
+
+  LoopDriver loop(4);
+  RunConfig small = tolerance_cfg();
+  small.ticks = 4;
+  small.world_models = {"noise_stub_small"};
+  const RunReport r1 = loop.run(small);
+  const RunReport r2 = loop.run(small);
+  CHECK(r1.metrics == r2.metrics);  // same noise, same metrics: loop-side determinism
+}
+
+int run() {
+  world_model::reg("noise_stub_small", []() -> std::unique_ptr<WorldModelAdapter> {
+    return std::make_unique<NoisyPredictor>(kEpsSmall);
+  });
+  world_model::reg("noise_stub_big", []() -> std::unique_ptr<WorldModelAdapter> {
+    return std::make_unique<NoisyPredictor>(kEpsBig);
+  });
+  test_comparator_pure_function();
+  test_stub_registration();
+  test_self_proof_both_directions();
+  test_determinism_pairing();
+  if (g_failures == 0) {
+    std::printf("slice08: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice08: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice08
+
 int main(int argc, char** argv) {
   if (argc < 2) {
     std::printf("usage: ow_tests <slice-name>\n");
@@ -1066,6 +1231,7 @@ int main(int argc, char** argv) {
   if (std::strcmp(argv[1], "slice05") == 0) return slice05::run();
   if (std::strcmp(argv[1], "slice06") == 0) return slice06::run();
   if (std::strcmp(argv[1], "slice07") == 0) return slice07::run();
+  if (std::strcmp(argv[1], "slice08") == 0) return slice08::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;
 }

@@ -2,7 +2,7 @@
 
 > 只回答一个问题：**现在做什么。** 背景与全貌见 [`PLAN.md`](PLAN.md)。
 
-**阶段 B L1 已冻结（owner 三轮共创）；spec + 5 张切片票已发布；下一张 = B1「双模式 CLI + 工件 schema」。**
+**阶段 B L1 已冻结；切片 B1–B2 ✅ 完成（ctest 9/9）；下一张 = B3「延迟计量 + 分位数下沉」。**
 
 ## 当前状态
 
@@ -16,14 +16,19 @@
 - **阶段 B L1 已冻结**（2026-10-16，三轮共创）：`docs/design/stage-b-dual-mode/概要设计.md`；双模式 CLI/容差比较器/延迟计量 + F1 + F2 五切片就绪。
 - 旧基线（重建对照）：Gate 1 三判据 1106.7 Hz / 适配器零核心改动 / ECE 分离 0.9617。
 
-## 下一件事 = 领取切片 B1
+## 下一件事 = 领取切片 B3
+
+- **票据**：[`.scratch/stage-b-dual-mode/issues/03-latency-percentiles.md`](.scratch/stage-b-dual-mode/issues/03-latency-percentiles.md)（blocked by B1 —— 已解锁）
+- 流程：新开 session 粘入——
+
+  > 实现 .scratch/stage-b-dual-mode/issues/03-latency-percentiles.md——先读 spec 与 L1（docs/design/stage-b-dual-mode/概要设计.md）、既有代码与容差比较器（src/tolerance/），产出 L2 详细设计给我批准，批准后 TDD 实现。
 
 - **票据：[`.scratch/stage-b-dual-mode/issues/01-dual-mode-cli-artifact-schema.md`](.scratch/stage-b-dual-mode/issues/01-dual-mode-cli-artifact-schema.md)**（无阻塞，可立即开始）
 - 流程：新开一个 session，粘入这段话即可——
 
   > 实现 .scratch/stage-b-dual-mode/issues/01-dual-mode-cli-artifact-schema.md——先读 spec（`.scratch/stage-b-dual-mode/spec.md`）与 L1（`docs/design/stage-b-dual-mode/概要设计.md`）及既有代码，产出该切片的 L2 详细设计给我批准，批准后 TDD 实现。
 
-- 切片链：B1 双模式 CLI + 工件 schema → B2 容差比较器 + 噪声 stub → B3 延迟计量 + 分位数下沉 → B4 per-producer ECE（F1）→ B5 有界场景（F2，出口 = 阶段 B 完成）。
+- 切片链：B1 ✅ 双模式 CLI+工件 schema → B2 ✅ 容差比较器+噪声 stub → **B3 延迟计量+分位数下沉** → B4 per-producer ECE（F1）→ B5 有界场景（F2，出口 = 阶段 B 完成）。
 
 - 切片链：01 ✅ 真值心跳 → 02 ✅ 观察生成 → 03 ✅ 感知接缝 → 04 ✅ 裁决与信念账本 → 05 ✅ 指标组 → 06 ✅ 世界模型接缝 + Gate-1 对齐报告（**阶段 A 完成**）→ **阶段 B：L1 已冻结，切片 B1–B5 就绪**。
 

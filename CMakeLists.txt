@@ -73,6 +73,7 @@ add_library(ow_core OBJECT
   src/world_model/registry.cpp
   src/world_model/zero_delta.cpp
   src/world_model/linear_model.cpp
+  src/tolerance/tolerance.cpp
   src/loop/driver.cpp)
 
 target_include_directories(ow_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -125,3 +126,4 @@ add_test(NAME ow_slice04 COMMAND ow_tests slice04)
 add_test(NAME ow_slice05 COMMAND ow_tests slice05)
 add_test(NAME ow_slice06 COMMAND ow_tests slice06)
 add_test(NAME ow_slice07 COMMAND ow_tests slice07)
+add_test(NAME ow_slice08 COMMAND ow_tests slice08)
