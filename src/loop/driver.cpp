@@ -157,7 +157,12 @@ std::string run_report_json(const RunReport& r) {
   std::string out;
   out += "{\n";
   out += "  \"config\": {\n";
-  out += "    \"mode\": " + quote(mode_name(r.mode)) + "\n";
+  out += "    \"mode\": " + quote(mode_name(r.mode)) + ",\n";
+  out += "    \"bounds\": " +
+         quote(r.bounds.kind == BoundsPolicy::Kind::Wall ? "wall" : "none") +
+         ",\n";
+  out += "    \"bounds_margin\": " +
+         num(static_cast<double>(r.bounds.margin)) + "\n";
   out += "  },\n";
   out += "  \"environment\": {\n";
   out += "    \"os\": " + quote(env.os) + ",\n";
@@ -192,6 +197,7 @@ std::string run_report_json(const RunReport& r) {
   out += "  \"announced\": " + num(r.announced) + ",\n";
   out += "  \"rejected\": " + num(r.rejected) + ",\n";
   out += "  \"adapter_faults\": " + num(r.adapter_faults) + ",\n";
+  out += "  \"boundary_events\": " + num(r.boundary_events) + ",\n";
   out += "  \"mode\": " + quote(mode_name(r.mode)) + ",\n";
   out += "  \"acceleration\": " +
          quote(r.mode == RunMode::Performance
@@ -214,6 +220,7 @@ std::variant<RunConfig, std::string> parse_config(int argc, const char* const* a
   cfg.perception_adapters = {"blob_detect", "blob_detect_overconfident"};
   cfg.world_models = {"zero_delta", "linear_extrapolation"};
   cfg.mode = RunMode::Reference;
+  cfg.bounds = BoundsPolicy{BoundsPolicy::Kind::None, 0.02f};
 
   auto need_value = [&](int& i) -> const char* {
     if (i + 1 >= argc) return nullptr;
@@ -281,6 +288,21 @@ std::variant<RunConfig, std::string> parse_config(int argc, const char* const* a
       } else {
         return std::string{"unknown --mode '" + m + "' (reference|performance)"};
       }
+    } else if (a == "--bounds") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--bounds needs a value"};
+      const std::string b{v};
+      if (b == "none") {
+        cfg.bounds.kind = BoundsPolicy::Kind::None;
+      } else if (b == "wall") {
+        cfg.bounds.kind = BoundsPolicy::Kind::Wall;
+      } else {
+        return std::string{"unknown --bounds '" + b + "' (none|wall)"};
+      }
+    } else if (a == "--margin") {
+      const char* v = need_value(i);
+      if (v == nullptr) return std::string{"--margin needs a value"};
+      cfg.bounds.margin = static_cast<float>(std::atof(v));
     } else if (a == "--out") {
       const char* v = need_value(i);
       if (v == nullptr) return std::string{"--out needs a value"};
@@ -288,6 +310,10 @@ std::variant<RunConfig, std::string> parse_config(int argc, const char* const* a
     } else {
       return std::string{"unknown option '" + a + "'"};
     }
+  }
+  if (cfg.bounds.kind == BoundsPolicy::Kind::Wall &&
+      !(cfg.bounds.margin > 0.0f && cfg.bounds.margin < 0.5f)) {
+    return std::string{"wall bounds need 0 < margin < 0.5"};
   }
   return cfg;
 }
@@ -328,7 +354,7 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
   RunReport rep;
 
   TruthWorld truth(cfg.seed);
-  WorldState ws;
+  WorldState ws(cfg.bounds);  // bounds injected at construction (L1 sec 4)
   truth.build_demo_scene(ws, scene_entities_);
 
   ObservationGenerator gen;
@@ -365,7 +391,10 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
     log.tick = t;
 
     const auto s0 = SteadyClock::now();
+    const std::size_t bounds_before = ws.boundary_events();
     truth.advance(ws, t);
+    log.boundary_events = ws.boundary_events() - bounds_before;
+    rep.boundary_events += log.boundary_events;
     const auto s1 = SteadyClock::now();
     const Observation obs = gen.render(ws, t, rcfg, Transform{});
     const auto s2 = SteadyClock::now();
@@ -436,6 +465,7 @@ RunReport LoopDriver::run(const RunConfig& cfg) {
   rep.stage_percentiles = percentiles(samples);
 
   rep.mode = cfg.mode;
+  rep.bounds = cfg.bounds;
   rep.ticks_run = cfg.ticks;
   rep.total_seconds = std::chrono::duration<double>(t_end - t_start).count();
   rep.hz = rep.total_seconds > 0.0

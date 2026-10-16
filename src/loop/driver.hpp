@@ -40,6 +40,7 @@ struct TickLog {
   std::size_t applied = 0;    // Matched
   std::size_t announced = 0;  // NewEntity
   std::size_t rejected = 0;   // Rejected (with reason, in the ledger)
+  std::size_t boundary_events = 0;  // contract 9 additive field (F1 grouping)
   StageLatency latency;
 };
 
@@ -51,7 +52,8 @@ struct RunConfig {
   float footprint = 0.0f;
   std::vector<std::string> perception_adapters;
   std::vector<std::string> world_models;
-  RunMode mode;  // no default member value; parse_config sets it explicitly
+  RunMode mode;        // no default member value; parse_config sets it
+  BoundsPolicy bounds;  // no default member value; parse_config sets it
 };
 
 struct EnvironmentMeta {
@@ -76,10 +78,12 @@ struct RunReport {
   StageLatency latency_sum;
   std::size_t adapter_faults = 0;  // caught exceptions (isolation proof)
   RunMode mode = RunMode::Reference;
+  BoundsPolicy bounds{BoundsPolicy::Kind::None, 0.0f};  // scene that produced it
   // B3: raw per-stage microsecond samples + percentiles. Diagnostic only:
   // they never enter world_hash / ledger_hash.
   StageSamples stage_samples;
   std::map<std::string, Percentiles> stage_percentiles;
+  std::size_t boundary_events = 0;  // contract 9 aggregate
 };
 
 class LoopDriver {

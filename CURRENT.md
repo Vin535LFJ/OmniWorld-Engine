@@ -32,7 +32,14 @@
 
 - 切片链：01 ✅ 真值心跳 → 02 ✅ 观察生成 → 03 ✅ 感知接缝 → 04 ✅ 裁决与信念账本 → 05 ✅ 指标组 → 06 ✅ 世界模型接缝 + Gate-1 对齐报告（**阶段 A 完成**）→ **阶段 B：L1 已冻结，切片 B1–B5 就绪**。
 
-## 出口条件（阶段 B，L0 §4）
+## 入口（阶段 C）
+
+- 依据 PLAN §六 Phase 2 行（ONNX Runtime 真模型适配器）；仪式同阶段 B：grill-with-docs 式共创 L1 → 批准冻结 → to-tickets → 逐片 L2/TDD。
+- 新 session 粘入：
+
+  > 共创阶段 C「AI 入环」的 L1——依据 PLAN §六 与 docs/design/00-总体设计.md §4，产出 docs/design/stage-c-ai-in-loop/概要设计.md。
+
+## 出口判据（阶段 B，L0 §4，已达成）
 
 参考模式逐字节不变（全量 ctest 绿）+ 性能模式容差自证（噪声 stub：窗内过、超窗红）。
 

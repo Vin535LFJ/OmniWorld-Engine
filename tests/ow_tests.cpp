@@ -52,7 +52,7 @@ std::uint64_t hash_state(const WorldState& ws) {
 
 void test_tick_advance_exact() {
   TruthWorld tw(42);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   const EntityId id = tw.spawn(ws, ClassTag{"blob"},
                                Transform{Vec3{0.0f, 0.0f, 0.0f}, Quat{}},
                                Vec3{0.25f, 0.0f, -0.5f});
@@ -69,19 +69,19 @@ void test_tick_advance_exact() {
 
 void test_determinism() {
   TruthWorld a(7);
-  WorldState wa;
+  WorldState wa{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   a.build_demo_scene(wa, 8);
   a.advance(wa, 100);
 
   TruthWorld b(7);
-  WorldState wb;
+  WorldState wb{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   b.build_demo_scene(wb, 8);
   b.advance(wb, 100);
 
   CHECK(hash_state(wa) == hash_state(wb));  // same seed -> identical world
 
   TruthWorld c(8);
-  WorldState wc;
+  WorldState wc{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   c.build_demo_scene(wc, 8);
   c.advance(wc, 100);
   CHECK(hash_state(wa) != hash_state(wc));  // different seed -> different world
@@ -89,7 +89,7 @@ void test_determinism() {
 
 void test_id_minting() {
   TruthWorld tw(1);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   const EntityId a = tw.spawn(ws, ClassTag{"a"}, Transform{}, Vec3{});
   const EntityId b = tw.spawn(ws, ClassTag{"b"}, Transform{}, Vec3{});
   const EntityId c = tw.spawn(ws, ClassTag{"c"}, Transform{}, Vec3{});
@@ -114,7 +114,7 @@ void test_rng_stable() {
 
 void test_advance_backwards_is_ignored() {
   TruthWorld tw(3);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   tw.spawn(ws, ClassTag{"x"}, Transform{}, Vec3{});
   tw.advance(ws, 10);
   tw.advance(ws, 3);  // backwards: defensive no-op, no crash, no state change
@@ -193,7 +193,7 @@ bool vis_is(const Observation& o, std::size_t i, EntityId id, Visibility v) {
 
 void test_resolution_is_parameter() {
   TruthWorld tw(99);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   const EntityId id =
       tw.spawn(ws, ClassTag{"blob"}, Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
                Vec3{});
@@ -216,7 +216,7 @@ void test_resolution_is_parameter() {
 
 void test_three_state_visibility() {
   TruthWorld tw(5);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   const EntityId a =
       tw.spawn(ws, ClassTag{"seen"}, Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
                Vec3{});
@@ -248,7 +248,7 @@ void test_three_state_visibility() {
 
 void test_frame_metadata() {
   TruthWorld tw(1);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   ObservationGenerator gen;
   RenderConfig cfg{4, 4, 0.25f};
   const Observation o = gen.render(ws, 42, cfg, Transform{});
@@ -263,7 +263,7 @@ void test_frame_metadata() {
 
 void test_invalid_config_throws() {
   TruthWorld tw(1);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   ObservationGenerator gen;
   bool caught = false;
   try {
@@ -277,7 +277,7 @@ void test_invalid_config_throws() {
 
 void test_empty_world_is_legal() {
   TruthWorld tw(1);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   ObservationGenerator gen;
   RenderConfig cfg{4, 4, 0.25f};
   const Observation o = gen.render(ws, 0, cfg, Transform{});
@@ -288,7 +288,7 @@ void test_empty_world_is_legal() {
 
 void test_boundary_straddler_does_not_crash() {
   TruthWorld tw(1);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   tw.spawn(ws, ClassTag{"liminal"},
            Transform{Vec3{1.0f, 0.0f, 0.5f}, Quat{}}, Vec3{});
   ObservationGenerator gen;
@@ -303,7 +303,7 @@ void test_boundary_straddler_does_not_crash() {
 
 void test_determinism_pairing() {
   TruthWorld tw(7);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
            Vec3{});
   tw.spawn(ws, ClassTag{"b"}, Transform{Vec3{0.875f, 0.0f, 0.25f}, Quat{}},
@@ -540,7 +540,7 @@ Proposal id_proposal(const char* producer, Tick t, EntityId id, float conf) {
 
 struct Scene {
   TruthWorld tw;
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   EntityId e1, e2;
   Scene() : tw(1) {
     e1 = tw.spawn(ws, ClassTag{"a"},
@@ -597,7 +597,7 @@ void test_missing_position_rejected() {
 
 void test_tie_breaks_by_id_order() {
   TruthWorld tw(7);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.25f, 0.0f, 0.0f}, Quat{}}, Vec3{});
   tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.75f, 0.0f, 0.0f}, Quat{}}, Vec3{});
   NearestPositionStrategy strat(0.5f);  // big tolerance
@@ -702,7 +702,7 @@ BeliefEntry matched_at(float x, float z, float conf, EntityId truth_id,
 
 struct World2 {
   TruthWorld tw{1};
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   EntityId e1, e2;
   World2() {
     e1 = tw.spawn(ws, ClassTag{"a"},
@@ -864,7 +864,7 @@ void test_world_model_registry() {
 
 void test_models_predict_exactly() {
   TruthWorld tw(1);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   const EntityId e1 = tw.spawn(ws, ClassTag{"a"},
                                Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
                                Vec3{0.25f, 0.0f, 0.0f});
@@ -1131,7 +1131,7 @@ void test_stub_registration() {
   CHECK(world_model::make("noise_stub_big") != nullptr);
   auto small = world_model::make("noise_stub_small");
   TruthWorld tw(1);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
            Vec3{});
   const auto ps = small->predict(3, ws);
@@ -1350,7 +1350,7 @@ void feed_pattern(MetricsModule& m, const WorldState& ws, const char* producer,
 
 void test_decomposed_exact_values() {
   TruthWorld tw(1);
-  WorldState ws;
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
   tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
            Vec3{});
 
@@ -1402,6 +1402,128 @@ int run() {
 
 }  // namespace slice10
 
+namespace slice11 {
+
+BoundsPolicy no_bounds() { return BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}; }
+BoundsPolicy wall(float m) { return BoundsPolicy{BoundsPolicy::Kind::Wall, m}; }
+
+RunConfig bounds_cfg(BoundsPolicy b, Tick ticks = 50) {
+  RunConfig cfg{};
+  cfg.ticks = ticks;
+  cfg.seed = 42;
+  cfg.width = 64;
+  cfg.height = 64;
+  cfg.footprint = 0.02f;
+  cfg.perception_adapters = {"blob_detect"};
+  cfg.world_models = {};
+  cfg.mode = RunMode::Reference;
+  cfg.bounds = b;
+  return cfg;
+}
+
+void test_none_mode_baseline_hashes() {
+  LoopDriver loop(8);
+  RunConfig cfg = bounds_cfg(no_bounds(), 600);
+  cfg.perception_adapters = {"blob_detect", "blob_detect_overconfident"};
+  cfg.world_models = {"zero_delta", "linear_extrapolation"};
+  const RunReport r = loop.run(cfg);
+  CHECK(r.world_hash == 0x574361e62eec92b9ULL);   // alignment baseline, frozen
+  CHECK(r.ledger_hash == 0x459ff85132cc103eULL);  // ... byte-for-byte
+  CHECK(r.boundary_events == 0);
+}
+
+void test_wall_keeps_entities_in_bounds() {
+  TruthWorld tw(3);
+  WorldState ws(wall(0.02f));
+  tw.build_demo_scene(ws, 8);
+  tw.advance(ws, 200);
+  for (const Entity& e : ws.entities()) {
+    CHECK(e.transform.position.x >= 0.02f);
+    CHECK(e.transform.position.x <= 0.98f);
+    CHECK(e.transform.position.z >= 0.02f);
+    CHECK(e.transform.position.z <= 0.98f);
+  }
+  CHECK(ws.boundary_events() > 0);
+}
+
+void test_single_reflection_exact() {
+  TruthWorld tw(1);
+  WorldState ws(wall(0.02f));
+  tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.95f, 0.0f, 0.5f}, Quat{}},
+           Vec3{0.05f, 0.0f, 0.0f});
+  tw.advance(ws, 1);  // 0.95 + 0.05 crosses 0.98 -> mirrored
+  const Entity* e = ws.find(1);
+  CHECK(e != nullptr);
+  if (e != nullptr) {
+    CHECK(e->transform.position.x ==
+          0.98f - ((0.95f + 0.05f) - 0.98f));  // same expr, same double
+    CHECK(e->velocity.x == -0.05f);            // mirrored
+    CHECK(ws.boundary_events() == 1);          // exactly one reflection
+  }
+}
+
+void test_clamp_for_extreme_speed() {
+  TruthWorld tw(1);
+  WorldState ws(wall(0.02f));
+  tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
+           Vec3{2.5f, 0.0f, 0.0f});
+  tw.advance(ws, 50);
+  for (const Entity& e : ws.entities()) {
+    CHECK(e.transform.position.x >= 0.02f);
+    CHECK(e.transform.position.x <= 0.98f);
+  }
+  CHECK(ws.boundary_events() >= 1);  // reflected (and clamped), never dead
+}
+
+void test_wall_determinism_and_json() {
+  LoopDriver loop(8);
+  const RunReport a = loop.run(bounds_cfg(wall(0.02f)));
+  const RunReport b = loop.run(bounds_cfg(wall(0.02f)));
+  CHECK(a.world_hash == b.world_hash);
+  CHECK(a.ledger_hash == b.ledger_hash);
+  CHECK(a.metrics == b.metrics);
+  CHECK(a.boundary_events > 0);
+  const RunReport n = loop.run(bounds_cfg(no_bounds()));
+  CHECK(n.world_hash != a.world_hash);  // different physics, different world
+  const std::string j = run_report_json(a);
+  CHECK(j.find("\"bounds\": \"wall\"") != std::string::npos);
+  CHECK(j.find("\"boundary_events\"") != std::string::npos);
+}
+
+void test_parse_bounds() {
+  std::string out;
+  const char* argv[] = {"prog", "--bounds", "wall", "--margin", "0.02"};
+  const auto parsed = parse_config(5, argv, out);
+  CHECK(std::holds_alternative<RunConfig>(parsed));
+  if (std::holds_alternative<RunConfig>(parsed)) {
+    const RunConfig& c = std::get<RunConfig>(parsed);
+    CHECK(c.bounds.kind == BoundsPolicy::Kind::Wall);
+    CHECK(c.bounds.margin == 0.02f);
+  }
+  const char* bad[] = {"prog", "--bounds", "wall", "--margin", "0.9"};
+  const auto err = parse_config(5, bad, out);
+  CHECK(std::holds_alternative<std::string>(err));
+  const char* bad2[] = {"prog", "--bounds", "bogus"};
+  CHECK(std::holds_alternative<std::string>(parse_config(3, bad2, out)));
+}
+
+int run() {
+  test_none_mode_baseline_hashes();
+  test_wall_keeps_entities_in_bounds();
+  test_single_reflection_exact();
+  test_clamp_for_extreme_speed();
+  test_wall_determinism_and_json();
+  test_parse_bounds();
+  if (g_failures == 0) {
+    std::printf("slice11: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice11: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice11
+
 int main(int argc, char** argv) {
   if (argc < 2) {
     std::printf("usage: ow_tests <slice-name>\n");
@@ -1417,6 +1539,7 @@ int main(int argc, char** argv) {
   if (std::strcmp(argv[1], "slice08") == 0) return slice08::run();
   if (std::strcmp(argv[1], "slice09") == 0) return slice09::run();
   if (std::strcmp(argv[1], "slice10") == 0) return slice10::run();
+  if (std::strcmp(argv[1], "slice11") == 0) return slice11::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;
 }

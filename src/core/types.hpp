@@ -16,6 +16,16 @@ struct Transform { Vec3 position; Quat orientation; };
 // Unseen is NOT empty and NOT zero — it means "not observed".
 enum class Visibility : std::uint8_t { Seen, Unseen, Uncertain };
 
+// Bounded scene policy (contract 9 additive field: boundary_events; stage B
+// slice F2). Wall reflects position with mirrored velocity on the x/z axes;
+// margin is the distance from each wall where reflection happens. No member
+// default values: callers (CLI layer, tests) construct explicitly.
+struct BoundsPolicy {
+  enum class Kind { None, Wall };
+  Kind kind;
+  float margin;
+};
+
 struct ClassTag { std::string value; };
 
 }  // namespace ow
