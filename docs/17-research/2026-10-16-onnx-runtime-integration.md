@@ -41,6 +41,7 @@
 | 事实 | 来源 |
 |---|---|
 | 官方仓库 **`DepthAnything/Depth-Anything-V2`**（注意：非 `LiheYoung` 路径的旧引用），**Apache-2.0** | GitHub API，2026-10-16 |
+| **修正（2026-10-16 实测）**：research 初稿引用的社区仓 `fabio-sim/Depth-Anything-ONNX` 经 HEAD 实测 **401（门槛仓）**；实际采用 **`onnx-community/depth-anything-v2-small`**（公开、`license:apache-2.0` 标签、109k 下载），`onnx/model.onnx` HEAD 实测 **99,060,839 B**；另有 fp16/int8/q4 量化变体同仓 | HF API tree + HEAD，2026-10-16 |
 | **官方无 ONNX 导出/权重**；ONNX 仅在 Community Support（`fabio-sim/Depth-Anything-ONNX`） | 仓库 contents API + README |
 | 许可细节：README 原文 "Depth-Anything-V2-Small model is under the Apache-2.0 license"（Base/Large/Giant 为 CC-BY-NC-4.0） | 官方 README |
 | 规模：**24.8M 参数**；官方 `.pth` 99,218,434 B；自导 FP32 ONNX 预计 ≈99MB | HuggingFace API |
@@ -54,6 +55,7 @@
 
 ## 6. 模型获取决策（给 C3/C4 的输入）
 
-- **RT-DETRv2-S**：取社区 ONNX `onnx-community/rtdetr_r18vd`（82.6MB，权重 Apache-2.0；社区导出的 provenance 在 manifest 记录），或 Kaggle 免费环境按官方脚本自导（备选路径）。
-- **DA-V2-Small**：官方无 ONNX → 社区 `fabio-sim/Depth-Anything-ONNX` 或 Kaggle 自导；≈99MB；许可 Apache-2.0（仅 Small 尺寸宽松——manifest 附注）。
+- **RT-DETRv2-S**：取社区 ONNX `onnx-community/rtdetr_r18vd/onnx/model.onnx`（HEAD 实测 82,572,357 B，与 research 一致；权重 Apache-2.0；社区导出的 provenance 在 manifest 记录），或 Kaggle 免费环境按官方脚本自导（备选路径）。
+- **DA-V2-Small**：官方无 ONNX → 社区 `onnx-community/depth-anything-v2-small/onnx/model.onnx`（HEAD 实测 99,060,839 B；Apache-2.0 标签；仅 Small 尺寸宽松许可）或 Kaggle 自导（备选）。
+- **下载实测（2026-10-16）**：`node tools/fetch_models.mjs` 首跑（幂等 + SHA256 pin）——两文件均按上述 URL 实测可取；SHA256 首次下载时 pin 定于 `tools/fetch_models.manifest.json`。
 - SHA256 于 fetch 首跑 `--record` pin 定；URL 失效时 manifest 启用备选路径。

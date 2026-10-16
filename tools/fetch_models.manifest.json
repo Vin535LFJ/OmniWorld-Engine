@@ -1,0 +1,12 @@
+{
+  "models": {
+    "rtdetrv2-s-onnx": {
+      "sha256": "11843b02455cc24009aed24d4c40db721b1093be5ccd6bbe7b9c441abb1d0558",
+      "size": 82572357
+    },
+    "depth-anything-v2-small-onnx": {
+      "sha256": "afb6a5c28f3b6bf1618c6e43f02073ef9dfdc70e937502d51603e57b0a1df10c",
+      "size": 99060839
+    }
+  }
+}

@@ -21,3 +21,4 @@
 - 2026-10-16 · **research note 关键事实（一手来源，2026-10-16 检索）**：ORT 1.31.0 CUDA EP 需 CUDA 12.8+ / cuDNN 9.x，**本机 CUDA 12.6.20 存在版本线缺口**——ORT 版本不预 pin，留 C3 首消费按本机实际定版并回填 note；TensorRT Windows 近况 = Win10 支持 2026-10 后终止 + TRT EP ABI 绑定 open issue → TRT EP 预留不实现（与 L1 Round 1 #2 一致）；RT-DETRv2-S 官方 Apache-2.0 无 ONNX 权重（社区导出 82.6MB 可对账）；DA-V2-Small 官方 Apache-2.0、无 ONNX 导出（自导 ≈99MB）。
 - 2026-10-16 · **fetch_models 烟雾**：`--record` 在未 pin 且文件缺席时非零退出（fail-fast 生效）；models/ 已入 .gitignore。
 - 2026-10-16 · **偏离记录**：一处拼写修正（OW_WITH_ONNXRUNTUNT 双 T，自查捕获）；无其他偏离。
+- 2026-10-16 · **实测补充（download）**：`node tools/fetch_models.mjs` 首跑成功——两文件按 HEAD 尺寸落地（82,572,357 / 99,060,839 B），SHA256 已 pin 入 `tools/fetch_models.manifest.json`；`--record` 复验 exit 0；`models/` 已被 git 忽略。**环境审计**：本机仅 CUDA v12.6、**无任何 cuDNN DLL** → 按 research note，ORT 1.31 的 CUDA EP（需 CUDA 12.8+/cuDNN 9）在本机当前**不可用**——C3 以 CPU EP 参考路径落地，CUDA EP 路径接线但标注环境阻塞（cuDNN 9 安装属 owner 手动步骤，见 C3 报告）。

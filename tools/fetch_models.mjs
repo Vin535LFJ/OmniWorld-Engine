@@ -24,6 +24,7 @@ const MODELS_DIR = join(ROOT, 'models');
 const MANIFEST = [
   {
     id: 'rtdetrv2-s-onnx',
+    // HEAD-verified 2026-10-16: 82,572,357 B (matches research note).
     url: 'https://huggingface.co/onnx-community/rtdetr_r18vd/resolve/main/onnx/model.onnx',
     size: 82572357,
     license: 'Apache-2.0 (weights; community ONNX export — provenance in research note)',
@@ -32,8 +33,10 @@ const MANIFEST = [
   },
   {
     id: 'depth-anything-v2-small-onnx',
-    url: 'https://huggingface.co/fabio-sim/Depth-Anything-ONNX/resolve/main/depth_anything_v2_small.onnx',
-    size: 99000000, // ≈99MB estimate; exact size pinned at download
+    // onnx-community/depth-anything-v2-small (public, apache-2.0 tag; fabio-sim
+    // variant is gated/401 — verified 2026-10-16). HEAD: 99,060,839 B.
+    url: 'https://huggingface.co/onnx-community/depth-anything-v2-small/resolve/main/onnx/model.onnx',
+    size: 99060839,
     license: 'Apache-2.0 (only the Small variant is permissively licensed)',
     backup: 'export per official DepthAnything/Depth-Anything-V2 on Kaggle (free GPU)',
     sha256: '',
@@ -93,18 +96,23 @@ async function main() {
         continue;
       }
       let bytes = 0;
-      if (!(await stat(dest)).size) {
+      let present = true;
+      try {
+        bytes = (await stat(dest)).size;
+      } catch {
+        present = false;  // missing file: stat throws, so probe explicitly
+      }
+      if (!present || bytes === 0) {
         const r = await download(entry);
         bytes = r.bytes;
       } else {
-        bytes = (await stat(dest)).size;
         process.stdout.write(`present ${entry.id} (${bytes} bytes)\n`);
       }
-      if (entry.sha256 && !manifest.models[entry.id]?.sha256) {
-        manifest.models[entry.id] = { sha256: '', size: bytes };
-        manifest.models[entry.id].sha256 = await sha256Of(dest);
+      if (!manifest.models[entry.id]?.sha256) {
+        manifest.models[entry.id] = { sha256: await sha256Of(dest), size: bytes };
         await saveManifest(manifest);
-        process.stdout.write(`pinned ${entry.id} sha256=${manifest.models[entry.id].sha256.slice(0, 16)}…\n`);
+        process.stdout.write(
+            `pinned ${entry.id} sha256=${manifest.models[entry.id].sha256.slice(0, 16)}…\n`);
       }
     } catch (e) {
       failures += 1;
