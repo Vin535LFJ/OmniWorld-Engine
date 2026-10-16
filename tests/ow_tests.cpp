@@ -1524,6 +1524,132 @@ int run() {
 
 }  // namespace slice11
 
+namespace slice12 {
+
+ObservationGenerator make_gen() {
+  return ObservationGenerator{};  // renders at caller-requested resolutions
+}
+
+void test_camera_merged_into_observation() {
+  TruthWorld tw(1);
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
+  tw.spawn(ws, ClassTag{"a"}, Transform{Vec3{0.25f, 0.0f, 0.5f}, Quat{}},
+           Vec3{});
+  const RenderConfig cfg{32, 32, 0.02f};
+  const Transform pose{Vec3{0.0f, 0.0f, 0.0f}, Quat{}};
+  const Observation obs = make_gen().render(ws, 3, cfg, pose);
+  CHECK(obs.view.width == 32);          // resolution rides on the camera
+  CHECK(obs.view.height == 32);
+  CHECK(obs.meta.width == obs.view.width);   // dims cannot disagree
+  CHECK(obs.meta.height == obs.view.height);
+  // Projection round-trip: world -> pixel -> world (pixel box centers).
+  const float wx = obs.view.world_x(obs.view.pixel_x(0.25f));
+  const float wz = obs.view.world_z(obs.view.pixel_z(0.5f));
+  CHECK(wx - 0.25f < 0.05f && wx - 0.25f > -0.05f);  // one pixel of rounding
+  CHECK(wz - 0.5f < 0.05f && wz - 0.5f > -0.05f);
+}
+
+void test_multi_resolution_render() {
+  TruthWorld tw(1);
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
+  const EntityId id =
+      tw.spawn(ws, ClassTag{"m"}, Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}},
+               Vec3{});
+  ObservationGenerator gen;
+  const Transform pose{Vec3{0.0f, 0.0f, 0.0f}, Quat{}};
+  const int widths[] = {32, 64, 518, 640};  // DA-V2-S / RT-DETRv2-S inputs
+  for (int w : widths) {
+    const RenderConfig cfg{w, w, 0.02f};
+    const Observation obs = gen.render(ws, 1, cfg, pose);
+    CHECK(obs.rgb.size() ==
+          static_cast<std::size_t>(w) * w * 3);  // buffer matches camera
+    const Entity* e = ws.find(id);
+    CHECK(e != nullptr);
+    if (e != nullptr) {
+      // The entity's footprint lands at the frame center at every resolution.
+      const int cx = obs.view.pixel_x(e->transform.position.x);
+      const int cz = obs.view.pixel_z(e->transform.position.z);
+      CHECK(cx >= w / 2 - 2 && cx <= w / 2 + 2);  // footprint ~0.02 -> 1-2 px
+      CHECK(cz >= w / 2 - 2 && cz <= w / 2 + 2);
+    }
+  }
+}
+
+void test_none_mode_reference_hashes_unchanged() {
+  // Camera merge must not move one byte: 600/42 default scene baseline.
+  LoopDriver loop(8);
+  RunConfig cfg{};
+  cfg.ticks = 600;
+  cfg.seed = 42;
+  cfg.width = 64;
+  cfg.height = 64;
+  cfg.footprint = 0.02f;
+  cfg.perception_adapters = {"blob_detect", "blob_detect_overconfident"};
+  cfg.world_models = {"zero_delta", "linear_extrapolation"};
+  cfg.mode = RunMode::Reference;
+  cfg.bounds = BoundsPolicy{BoundsPolicy::Kind::None, 0.0f};
+  cfg.ep = ExecProvider::CpuEp;
+  const RunReport r = loop.run(cfg);
+  CHECK(r.world_hash == 0x574361e62eec92b9ULL);
+  CHECK(r.ledger_hash == 0x459ff85132cc103eULL);
+}
+
+void test_visibility_is_resolution_independent() {
+  TruthWorld tw(5);
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
+  const EntityId inside = tw.spawn(
+      ws, ClassTag{"in"}, Transform{Vec3{0.5f, 0.0f, 0.5f}, Quat{}}, Vec3{});
+  const EntityId outside = tw.spawn(
+      ws, ClassTag{"out"}, Transform{Vec3{2.0f, 0.0f, 2.0f}, Quat{}}, Vec3{});
+  ObservationGenerator gen;
+  const Transform pose{Vec3{0.0f, 0.0f, 0.0f}, Quat{}};
+  for (int w : {32, 64, 640}) {
+    const Observation obs =
+        gen.render(ws, 1, RenderConfig{w, w, 0.02f}, pose);
+    bool found_in = false;
+    bool found_out = false;
+    for (const auto& [id, v] : obs.visibility) {
+      if (id == inside) found_in = (v == Visibility::Seen);
+      if (id == outside) found_out = (v == Visibility::Unseen);
+    }
+    CHECK(found_in);   // three-state verdicts are geometric, not resolution-dependent
+    CHECK(found_out);
+  }
+}
+
+void test_render_determinism_pairing() {
+  TruthWorld tw(9);
+  WorldState ws{BoundsPolicy{BoundsPolicy::Kind::None, 0.0f}};
+  tw.build_demo_scene(ws, 6);
+  const RenderConfig cfg{96, 96, 0.05f};
+  const Transform pose{Vec3{0.0f, 0.0f, 0.0f}, Quat{}};
+  const Observation a = make_gen().render(ws, 11, cfg, pose);
+  const Observation b = make_gen().render(ws, 11, cfg, pose);
+  CHECK(a.view.width == b.view.width);    // camera fields compared too
+  CHECK(a.rgb.size() == b.rgb.size());
+  bool rgb_eq = a.rgb.size() == b.rgb.size();
+  for (std::size_t i = 0; i < a.rgb.size(); ++i) {
+    rgb_eq = rgb_eq && a.rgb[i] == b.rgb[i];
+  }
+  CHECK(rgb_eq);
+}
+
+int run() {
+  test_camera_merged_into_observation();
+  test_multi_resolution_render();
+  test_none_mode_reference_hashes_unchanged();
+  test_visibility_is_resolution_independent();
+  test_render_determinism_pairing();
+  if (g_failures == 0) {
+    std::printf("slice12: all tests passed\n");
+    return 0;
+  }
+  std::printf("slice12: %d check(s) FAILED\n", g_failures);
+  return 1;
+}
+
+}  // namespace slice12
+
 namespace slice15 {
 
 void test_parse_ep() {
@@ -1577,6 +1703,7 @@ int main(int argc, char** argv) {
   if (std::strcmp(argv[1], "slice09") == 0) return slice09::run();
   if (std::strcmp(argv[1], "slice10") == 0) return slice10::run();
   if (std::strcmp(argv[1], "slice11") == 0) return slice11::run();
+  if (std::strcmp(argv[1], "slice12") == 0) return slice12::run();
   if (std::strcmp(argv[1], "slice15") == 0) return slice15::run();
   std::printf("unknown slice: %s\n", argv[1]);
   return 1;

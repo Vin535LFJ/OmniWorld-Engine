@@ -23,15 +23,8 @@ Color palette(const std::string& tag) {
                static_cast<std::uint8_t>(64 + ((v >> 16) & 0x7F))};
 }
 
-// World window [0,1] x [0,1] on the x/z plane (y is up). The caller's pose is
-// recorded in the frame metadata but v1 does not move the projection.
-// Out-of-window world coordinates clamp to the border column/row.
-int world_to_pixel(float w, int extent) {
-  int p = static_cast<int>(std::floor(w * static_cast<float>(extent)));
-  if (p < 0) p = 0;
-  if (p > extent - 1) p = extent - 1;
-  return p;
-}
+// World window [0,1] x [0,1] on the x/z plane (y is up). Projection lives in
+// ViewCamera now (merged camera, stage C slice C2); the free helper is gone.
 
 }  // namespace
 
@@ -45,9 +38,11 @@ Observation ObservationGenerator::render(const WorldState& ws, Tick tick,
 
   Observation out;
   out.tick = tick;
-  out.view_pose = pose;
-  out.meta.width = cfg.width;
-  out.meta.height = cfg.height;
+  out.view.pose = pose;  // merged camera: single construction point
+  out.view.width = cfg.width;
+  out.view.height = cfg.height;
+  out.meta.width = out.view.width;   // dims cannot disagree with the camera
+  out.meta.height = out.view.height;
 
   const std::size_t npx =
       static_cast<std::size_t>(cfg.width) * static_cast<std::size_t>(cfg.height);
@@ -78,10 +73,10 @@ Observation ObservationGenerator::render(const WorldState& ws, Tick tick,
                                 fully_in ? Visibility::Seen
                                          : Visibility::Uncertain);
 
-    const int px0 = world_to_pixel(x0, cfg.width);
-    const int px1 = world_to_pixel(x1, cfg.width);
-    const int py0 = world_to_pixel(z0, cfg.height);
-    const int py1 = world_to_pixel(z1, cfg.height);
+    const int px0 = out.view.pixel_x(x0);
+    const int px1 = out.view.pixel_x(x1);
+    const int py0 = out.view.pixel_z(z0);
+    const int py1 = out.view.pixel_z(z1);
     const Color c = palette(e.class_tag.value);
     for (int py = py0; py <= py1; ++py) {
       for (int px = px0; px <= px1; ++px) {
